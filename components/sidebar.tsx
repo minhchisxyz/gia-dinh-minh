@@ -20,11 +20,13 @@ import {Separator} from "@/components/ui/separator";
 import {toast} from "sonner";
 import {Progress} from "@/components/ui/progress";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
+import CommentSection from "@/components/comment-section";
+import {Comment} from "@/lib/definitions";
 
-export function SidebarContent() {
+export function SidebarContent({ comments, folderId }: { comments?: Comment[], folderId?: number }) {
   const pathname = usePathname()
-  let parentId = undefined
-  if (pathname && pathname.includes('folders')) {
+  let parentId = folderId
+  if (!parentId && pathname && pathname.includes('folders')) {
     parentId = Number.parseInt(pathname.split('/')[2])
   }
   const createFolderWithParentId = createFolder.bind(null, parentId)
@@ -80,7 +82,7 @@ export function SidebarContent() {
   }
   return (
       <div className={`h-full flex flex-col`}>
-        <div className={`flex items-center justify-start p-2 gap-2`}>
+        <div className={`flex items-center justify-center p-2 gap-5`}>
           <Dialog>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -140,14 +142,19 @@ export function SidebarContent() {
           <Input multiple={true} onChange={handleFileChange} accept={`image/*,video/*`} type={`file`} ref={fileInputRef} hidden/>
         </div>
         <Separator/>
+        {comments && (
+          <div className="flex-1 overflow-hidden">
+            <CommentSection comments={comments} folderId={parentId} />
+          </div>
+        )}
       </div>
   )
 }
 
-export default function Sidebar() {
+export default function Sidebar({ comments, folderId }: { comments?: Comment[], folderId?: number }) {
   return (
       <aside className={`hidden md:block w-64 border-r bg-gray-50 overflow-y-auto h-full`}>
-        <SidebarContent/>
+        <SidebarContent comments={comments} folderId={folderId}/>
       </aside>
   )
 }

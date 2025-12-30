@@ -31,6 +31,7 @@
     "class-variance-authority": "^0.7.1",
     "cloudinary": "^2.8.0",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
     "google-auth-library": "^10.5.0",
     "googleapis": "^169.0.0",

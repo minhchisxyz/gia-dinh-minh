@@ -11,13 +11,35 @@ import {UploadApiResponse} from "cloudinary";
 
 export async function getFolder(id?: number): Promise<Folder | null> {
   const includeOptions = {
-    subfolders: true,
+    subfolders: {
+      include: {
+        loves: true
+      }
+    },
     parent: true,
     author: true,
     files: {
       include: {
         author: true,
-        parent: true
+        parent: true,
+        loves: true,
+        comments: {
+          include: {
+            author: true
+          },
+          orderBy: {
+            createdAt: 'desc' as const
+          }
+        }
+      }
+    },
+    loves: true,
+    comments: {
+      include: {
+        author: true
+      },
+      orderBy: {
+        createdAt: 'desc' as const
       }
     }
   }
@@ -74,7 +96,7 @@ async function uploadToCloudinary(file: File, buffer: Buffer) {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
         resource_type: 'auto',
-        folder: 'gia-dinh-minh',
+        folder: process.env.CLOUDINARY_FOLDER || 'gia-dinh-minh',
         transformation: [{
           quality: 'auto',
           fetch_format: 'auto',

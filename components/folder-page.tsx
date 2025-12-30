@@ -14,7 +14,7 @@ import {Fragment, useState} from "react";
 import Link from "next/link";
 import {usePathname} from "next/navigation";
 import FileCard from "@/components/file-card";
-import {CheckSquare, Download, EllipsisVertical, Menu, Trash2, X} from "lucide-react";
+import {CheckSquare, Download, EllipsisVertical, Heart, Menu, Trash2, X} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -27,11 +27,14 @@ import {getFilesForDownload, deleteItems} from "@/lib/actions/files";
 import {toast} from "sonner";
 import {useIsMobile} from "@/hooks/use-mobile";
 import {Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger} from "@/components/ui/drawer";
+import {toggleLove} from "@/lib/actions/interactions";
+import {cn} from "@/lib/utils";
 
 export default function FolderPage(
-    { folder, folderPath }: {
+    { folder, folderPath, currentUserId }: {
       folder: Folder,
-      folderPath: { name: string, href: string}[]
+      folderPath: { name: string, href: string}[],
+      currentUserId?: number
     }
 ) {
   const pathname = usePathname()
@@ -40,6 +43,7 @@ export default function FolderPage(
   const isActive = (href: string) => pathname === href
   const hasSelection = selectedFiles.length > 0 || selectedFolders.length > 0
   const isMobile = useIsMobile()
+  const isLoved = folder?.loves?.some(love => love.userId === currentUserId)
 
   const clearSelection = () => {
     setSelectedFiles([])
@@ -49,6 +53,12 @@ export default function FolderPage(
   const selectAll = () => {
     setSelectedFiles(folder?.files?.map(file => file.id) || [])
     setSelectedFolders(folder?.subfolders?.map(folder => folder.id) || [])
+  }
+
+  const handleLove = async () => {
+    if (folder) {
+      await toggleLove(undefined, folder.id, pathname)
+    }
   }
 
   const handleDownload = async () => {
@@ -120,7 +130,7 @@ export default function FolderPage(
 
   return (
       <div className={`flex h-full`}>
-        <Sidebar/>
+        <Sidebar comments={folder?.comments} folderId={folder?.id}/>
         <div className={`flex-1 overflow-y-auto p-6 bg-white`}>
           <div className={`flex flex-col gap-5`}>
             <div className="flex items-center gap-2">
@@ -135,10 +145,14 @@ export default function FolderPage(
                       <DrawerHeader>
                         <DrawerTitle>Menu</DrawerTitle>
                       </DrawerHeader>
-                      <SidebarContent />
+                      <SidebarContent comments={folder?.comments} folderId={folder?.id} />
                     </DrawerContent>
                   </Drawer>
               )}
+              <Button variant="ghost" size="sm" onClick={handleLove} className="flex items-center gap-1 text-gray-500 hover:text-red-500 px-2">
+                <Heart className={cn("w-4 h-4", isLoved && "fill-red-500 text-red-500")} />
+                <span>{folder?.loves?.length || 0}</span>
+              </Button>
               <Breadcrumb>
                 <BreadcrumbList>
                   {
@@ -196,7 +210,7 @@ export default function FolderPage(
                   </div>
               )}
             </div>
-            <div className={`flex gap-4 items-center flex-wrap`}>
+            <div className={`w-full flex gap-4 items-center flex-wrap justify-center md:justify-start`}>
               {
                 folder?.subfolders?.map((folder, index) => (
                     <FolderCard
@@ -209,7 +223,12 @@ export default function FolderPage(
                 ))
               }
             </div>
-            <div className={`flex gap-4 items-center flex-wrap`}>
+            {(!folder?.subfolders?.length && !folder?.files?.length) && (
+                <div className="flex flex-col items-center justify-center w-full py-12 text-gray-500">
+                  <p>Thư mục trống</p>
+                </div>
+            )}
+            <div className={`w-full flex gap-4 items-center flex-wrap justify-center md:justify-start`}>
               {
                 folder?.files?.map((file, index) => (
                     <FileCard
@@ -218,6 +237,7 @@ export default function FolderPage(
                         isSelected={selectedFiles.includes(file.id)}
                         hasSelection={hasSelection}
                         setSelectedFilesAction={setSelectedFiles}
+                        currentUserId={currentUserId}
                     />
                 ))
               }

@@ -71,6 +71,7 @@ export type User = {
   avatarUrl?: string | null
   files: File[]
   folders: Folder[]
+  loves: Love[]
 }
 
 export type File = {
@@ -87,6 +88,28 @@ export type File = {
   parentId: number
   parent?: Folder
   createdTime: string
+  loves: Love[]
+  comments: Comment[]
+}
+
+export type Love = {
+  id: number
+  userId: number
+  user: User
+  fileId?: number | null
+  file?: File
+  folderId?: number | null
+  folder?: Folder
+}
+
+export type Comment = {
+  id: number
+  content: string
+  authorId: number
+  author: User
+  createdAt: Date
+  fileId?: number | null
+  folderId?: number | null
 }
 
 export type Folder = {
@@ -100,4 +123,6 @@ export type Folder = {
   parent?: Folder
   subfolders?: Folder[]
   files?: File[]
+  loves: Love[]
+  comments: Comment[]
 }

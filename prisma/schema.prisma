@@ -29,6 +29,7 @@ model User {
   comments  Comment[]
   files     File[]
   folders   Folder[]
+  loves     Love[]
 }
 
 model Comment {
@@ -53,9 +54,22 @@ model File {
   comments           Comment[]
   authorId           Int
   author             User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  createdTime        DateTime  @default(now())
   parent             Folder    @relation(fields: [parentId], references: [id], onDelete: Cascade)
   parentId           Int
+  loves              Love[]
+  createdTime        DateTime  @default(now())
+}
+
+model Love {
+  id       Int     @id @default(autoincrement())
+  userId   Int
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileId   Int?
+  file     File?   @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  folderId Int?
+  folder   Folder? @relation(fields: [folderId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, fileId, folderId])
 }
 
 model Folder {
@@ -70,4 +84,5 @@ model Folder {
   createdTime DateTime  @default(now())
   parentId    Int?
   parent      Folder?   @relation("Subfolders", fields: [parentId], references: [id], onDelete: Cascade)
+  loves       Love[]
 }

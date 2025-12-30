@@ -136,7 +136,7 @@ export async function updateAvatar(formData: FormData) {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           resource_type: 'image',
-          folder: 'gia-dinh-minh/avatars',
+          folder: `${process.env.CLOUDINARY_FOLDER || 'gia-dinh-minh'}/avatars`,
           public_id: `avatar_${session.user?.id}`,
           overwrite: true,
           transformation: [{
