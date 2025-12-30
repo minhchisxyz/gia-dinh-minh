@@ -98,7 +98,7 @@ export default function FileCard(
                   sizes="256px"
               />
             </DialogTrigger>
-            <DialogContent showCloseButton={false} className="max-w-[95vw] w-full h-[95vh] p-0 border-none shadow-none bg-transparent flex items-center justify-center">
+            <DialogContent showCloseButton={false} className="max-w-[80vw] w-full h-[80vh] p-0 border-none shadow-none bg-transparent flex items-center justify-center">
               <DialogHeader className="hidden">
                 <DialogTitle />
               </DialogHeader>
