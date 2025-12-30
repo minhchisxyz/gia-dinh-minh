@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id       Int       @id @default(autoincrement())
+  role     Role      @default(USER)
+  email    String?   @unique
+  username String    @unique
+  password String
+  name     String
+  comments Comment[]
+  files    File[]
+  folders  Folder[]
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  file      File?    @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  fileId    Int?
+  folder    Folder?  @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  folderId  Int?
+}
+
+model File {
+  id                 Int       @id @default(autoincrement())
+  filename           String
+  extension          String
+  driveId            String    @unique
+  cloudinaryPublicId String    @unique
+  mimeType           String
+  comments           Comment[]
+  authorId           Int
+  author             User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdTime        DateTime  @default(now())
+  parent             Folder    @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  parentId           Int
+}
+
+model Folder {
+  id          Int       @id @default(autoincrement())
+  name        String
+  driveId     String    @unique
+  comments    Comment[]
+  authorId    Int
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  files       File[]
+  subfolders  Folder[]  @relation("Subfolders")
+  createdTime DateTime  @default(now())
+  parentId    Int?
+  parent      Folder?   @relation("Subfolders", fields: [parentId], references: [id], onDelete: Cascade)
+}
