@@ -10,7 +10,7 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator
 } from "@/components/ui/breadcrumb";
-import {Fragment, useState} from "react";
+import {Fragment, useEffect, useState} from "react";
 import Link from "next/link";
 import {usePathname} from "next/navigation";
 import FileCard from "@/components/file-card";
@@ -43,7 +43,14 @@ export default function FolderPage(
   const isActive = (href: string) => pathname === href
   const hasSelection = selectedFiles.length > 0 || selectedFolders.length > 0
   const isMobile = useIsMobile()
-  const isLoved = folder?.loves?.some(love => love.userId === currentUserId)
+
+  const [isLoved, setIsLoved] = useState(folder?.loves?.some(love => love.userId === currentUserId))
+  const [loveCount, setLoveCount] = useState(folder?.loves?.length || 0)
+
+  useEffect(() => {
+    setIsLoved(folder?.loves?.some(love => love.userId === currentUserId))
+    setLoveCount(folder?.loves?.length || 0)
+  }, [folder?.loves, currentUserId])
 
   const clearSelection = () => {
     setSelectedFiles([])
@@ -57,7 +64,17 @@ export default function FolderPage(
 
   const handleLove = async () => {
     if (folder) {
-      await toggleLove(undefined, folder.id, pathname)
+      const newIsLoved = !isLoved
+      setIsLoved(newIsLoved)
+      setLoveCount(prev => newIsLoved ? prev + 1 : prev - 1)
+
+      try {
+        await toggleLove(undefined, folder.id, pathname)
+      } catch (error) {
+        setIsLoved(!newIsLoved)
+        setLoveCount(prev => !newIsLoved ? prev + 1 : prev - 1)
+        console.error(error)
+      }
     }
   }
 
@@ -151,7 +168,7 @@ export default function FolderPage(
               )}
               <Button variant="ghost" size="sm" onClick={handleLove} className="flex items-center gap-1 text-gray-500 hover:text-red-500 px-2">
                 <Heart className={cn("w-4 h-4", isLoved && "fill-red-500 text-red-500")} />
-                <span>{folder?.loves?.length || 0}</span>
+                <span>{loveCount}</span>
               </Button>
               <Breadcrumb>
                 <BreadcrumbList>

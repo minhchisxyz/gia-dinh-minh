@@ -19,8 +19,9 @@ import UserAvatar from "@/components/user-avatar";
 import {toggleLove} from "@/lib/actions/interactions";
 import {usePathname} from "next/navigation";
 import {cn} from "@/lib/utils";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import CommentSection from "@/components/comment-section";
+import useLongPress from "@/hooks/use-long-press";
 
 export default function FileCard(
     { file, isSelected, hasSelection, setSelectedFilesAction, currentUserId }: {
@@ -33,20 +34,49 @@ export default function FileCard(
 ) {
   const isVideo = file.mimeType.startsWith('video/')
   const pathname = usePathname()
-  const isLoved = file.loves?.some(love => love.userId === currentUserId)
+
+  const [isLoved, setIsLoved] = useState(file.loves?.some(love => love.userId === currentUserId))
+  const [loveCount, setLoveCount] = useState(file.loves?.length || 0)
+
+  useEffect(() => {
+    setIsLoved(file.loves?.some(love => love.userId === currentUserId))
+    setLoveCount(file.loves?.length || 0)
+  }, [file.loves, currentUserId])
+
   const [isCommentOpen, setIsCommentOpen] = useState(false)
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
 
   const onCheck = () => {
     if (isSelected) setSelectedFilesAction((prev) => prev.filter(id => id !== file.id))
     else setSelectedFilesAction((prev) => [...prev, file.id])
   }
 
-  const handleLove = async () => {
-    await toggleLove(file.id, undefined, pathname)
+  const handleLove = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const newIsLoved = !isLoved
+    setIsLoved(newIsLoved)
+    setLoveCount(prev => newIsLoved ? prev + 1 : prev - 1)
+
+    try {
+      await toggleLove(file.id, undefined, pathname)
+    } catch (error) {
+      setIsLoved(!newIsLoved)
+      setLoveCount(prev => !newIsLoved ? prev + 1 : prev - 1)
+      console.error(error)
+    }
   }
 
+  const longPressProps = useLongPress(() => {
+    if (!isSelected) {
+      setSelectedFilesAction((prev) => [...prev, file.id])
+    }
+  })
+
   return (
-      <div className={`w-full h-72 md:w-64 md:h-64 flex flex-col bg-blue-50 hover:bg-[#e7f0ff] rounded-md p-3 cursor-pointer`}>
+      <div
+        {...longPressProps}
+        className={`w-full h-72 md:w-64 md:h-64 flex flex-col bg-blue-50 hover:bg-[#e7f0ff] rounded-md p-3 cursor-pointer`}
+      >
         <div className={`h-8 flex items-center`}>
           {
             isVideo ? <Clapperboard className={`text-red-500 fill-red-200`}/> : <ImageIcon className={`text-red-500 fill-red-200`}/>
@@ -88,30 +118,40 @@ export default function FileCard(
           </DropdownMenu>
         </div>
         <div className="relative flex-1 w-full overflow-hidden rounded-sm bg-gray-300">
-          <Dialog>
-            <DialogTrigger>
+          <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+            <DialogTrigger asChild>
               <Image
                   src={isVideo ? file.posterUrl || '/' : file.cloudinaryUrl}
                   fill
                   alt={file.filename}
-                  className="object-cover" // This keeps the aspect ratio while filling the box
+                  className="object-cover cursor-pointer" // This keeps the aspect ratio while filling the box
                   sizes="256px"
+                  onClick={() => setIsPreviewOpen(true)}
               />
             </DialogTrigger>
-            <DialogContent showCloseButton={false} className="max-w-[80vw] w-full h-[80vh] p-0 border-none shadow-none bg-transparent flex items-center justify-center">
+            <DialogContent
+              showCloseButton={false}
+              className="max-w-[80vw] w-full h-[80vh] p-0 border-none shadow-none bg-transparent flex items-center justify-center outline-none"
+              onClick={() => setIsPreviewOpen(false)}
+            >
               <DialogHeader className="hidden">
                 <DialogTitle />
               </DialogHeader>
               {isVideo ? (
-                  <video
-                      controls
-                      className="max-h-full max-w-full rounded-lg shadow-2xl"
-                      autoPlay
-                  >
-                    <source src={file.cloudinaryUrl} type={file.mimeType} />
-                  </video>
+                  <div onClick={(e) => e.stopPropagation()} className="contents">
+                    <video
+                        controls
+                        className="max-h-full max-w-full rounded-lg shadow-2xl"
+                        autoPlay
+                    >
+                      <source src={file.cloudinaryUrl} type={file.mimeType} />
+                    </video>
+                  </div>
               ) : (
-                  <div className="relative w-full h-full flex items-center justify-center">
+                  <div
+                    className="relative w-full h-full flex items-center justify-center"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <Image
                         src={file.cloudinaryUrl}
                         fill
@@ -131,8 +171,8 @@ export default function FileCard(
           <span className="text-xs text-gray-600 truncate flex-1">{file.author?.name}</span>
           <div className="flex items-center gap-2 text-gray-500">
             <button onClick={handleLove} className="hover:text-red-500 transition-colors flex items-center gap-1">
-              <Heart className={cn("w-4 h-4", isLoved && "fill-red-500 text-red-500")} />
-              <span className="text-xs">{file.loves?.length || 0}</span>
+              <Heart className={cn("w-5 h-5", isLoved && "fill-red-500 text-red-500")} />
+              <span className="text-xs">{loveCount}</span>
             </button>
             <button
               onClick={(e) => {
@@ -141,7 +181,7 @@ export default function FileCard(
               }}
               className="hover:text-blue-500 transition-colors flex items-center gap-1"
             >
-              <MessageCircle className="w-4 h-4" />
+              <MessageCircle className="w-5 h-5" />
               <span className="text-xs">{file.comments?.length || 0}</span>
             </button>
             <Dialog open={isCommentOpen} onOpenChange={setIsCommentOpen}>
