@@ -3,6 +3,7 @@ import "./globals.css";
 import {Be_Vietnam_Pro} from "next/font/google";
 import {ReactNode} from "react";
 import {Toaster} from "@/components/ui/sonner";
+import {Analytics} from "@vercel/analytics/next";
 
 const vietnam = Be_Vietnam_Pro({
   subsets: ['vietnamese'],
@@ -27,6 +28,7 @@ export default function RootLayout({
       >
         {children}
       <Toaster />
+      <Analytics/>
       </body>
     </html>
   );

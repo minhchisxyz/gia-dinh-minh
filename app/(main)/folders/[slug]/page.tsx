@@ -1,5 +1,5 @@
 import {getFolder, getFolderPath} from "@/lib/actions/files";
-import FolderPage from "@/pages/folder-page";
+import FolderPage from "@/components/folder-page";
 import {Folder} from "@/lib/definitions";
 
 export default async function Page(
