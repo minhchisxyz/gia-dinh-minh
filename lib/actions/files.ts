@@ -9,7 +9,7 @@ import {Readable} from "stream";
 import cloudinary from "@/lib/cloudinary";
 import {UploadApiResponse} from "cloudinary";
 
-export async function getFolder(id?: number): Promise<Folder> {
+export async function getFolder(id?: number): Promise<Folder | null> {
   const includeOptions = {
     subfolders: true,
     parent: true,
@@ -241,8 +241,23 @@ async function getAllFilesInFolder(id: number) {
   })
   if (!folder) return []
   let files = [...folder.files]
-  for (const subfolder of folder.subfolders) files = files.concat(await getAllFilesInFolder(subfolder.id))
+  const subfolderFiles = await Promise.all(folder.subfolders.map(sub => getAllFilesInFolder(sub.id)))
+  for (const sf of subfolderFiles) {
+    files = files.concat(sf)
+  }
   return files
+}
+
+export async function getFilesForDownload(fileIds: number[], folderIds: number[]) {
+  const files = await prisma.file.findMany({
+    where: { id: { in: fileIds } },
+    select: { driveId: true, filename: true }
+  })
+
+  const folderFilesResults = await Promise.all(folderIds.map(id => getAllFilesInFolder(id)))
+  const folderFiles = folderFilesResults.flat().map(f => ({ driveId: f.driveId, filename: f.filename }))
+
+  return [...files, ...folderFiles]
 }
 
 export async function deleteFolder(id: number) {
@@ -380,5 +395,18 @@ export async function deleteByDriveId(driveId: string) {
   } catch (error) {
     console.error('Error deleting from Drive:', error)
     return { success: false, error }
+  }
+}
+
+export async function deleteItems(fileIds: number[], folderIds: number[]) {
+  try {
+    await Promise.all([
+      ...fileIds.map(id => deleteFile(id)),
+      ...folderIds.map(id => deleteFolder(id))
+    ])
+    return { success: true }
+  } catch (error) {
+    console.error('Error deleting items:', error)
+    return { success: false, error: 'Failed to delete items' }
   }
 }

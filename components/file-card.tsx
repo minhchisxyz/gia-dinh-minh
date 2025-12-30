@@ -1,6 +1,8 @@
+'use client'
+
 import {File} from "@/lib/definitions";
 import Image from "next/image";
-import {Clapperboard, Download, EllipsisVertical, Image as ImageIcon, Trash2} from "lucide-react";
+import {Check, Clapperboard, Download, EllipsisVertical, Image as ImageIcon, Trash2} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,29 +13,45 @@ import {
 import Link from "next/link";
 import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger} from "@/components/ui/dialog";
 import {deleteFile} from "@/lib/actions/files";
+import {Dispatch, SetStateAction} from "react";
+import {Checkbox} from "@/components/ui/checkbox";
+import UserAvatar from "@/components/user-avatar";
 
 export default function FileCard(
-    { file }: {
-      file: File
+    { file, isSelected, hasSelection, setSelectedFilesAction }: {
+      file: File,
+      isSelected: boolean,
+      hasSelection: boolean,
+      setSelectedFilesAction: Dispatch<SetStateAction<number[]>>
     }
 ) {
   const isVideo = file.mimeType.startsWith('video/')
+  const onCheck = () => {
+    if (isSelected) setSelectedFilesAction((prev) => prev.filter(id => id !== file.id))
+    else setSelectedFilesAction((prev) => [...prev, file.id])
+  }
   return (
-      <div className={`w-64 h-56 flex flex-col bg-gray-100 rounded-md p-3 hover:bg-gray-200 cursor-pointer`}>
+      <div className={`w-64 h-64 flex flex-col bg-blue-50 hover:bg-[#e7f0ff] rounded-md p-3 cursor-pointer`}>
         <div className={`h-8 flex items-center`}>
-
           {
             isVideo ? <Clapperboard className={`text-red-500 fill-red-200`}/> : <ImageIcon className={`text-red-500 fill-red-200`}/>
           }
           <div className={`ml-2 flex-1`}>
             {file.filename}
           </div>
+          {hasSelection && <Checkbox checked={isSelected} onCheckedChange={onCheck}/>}
           <DropdownMenu>
             <DropdownMenuTrigger>
-              <EllipsisVertical className={`hover:bg-gray-300 rounded-full p-1`}/>
+              <EllipsisVertical className={`hover:bg-blue-200 rounded-full p-1`}/>
             </DropdownMenuTrigger>
             <DropdownMenuContent className={`w-36`} align={`start`} side={`right`}>
               <DropdownMenuGroup>
+                <DropdownMenuItem onClick={onCheck}>
+                  Chọn
+                  <DropdownMenuShortcut>
+                    <Check/>
+                  </DropdownMenuShortcut>
+                </DropdownMenuItem>
                 <Link href={`/api/drive/download/${file.driveId}`} prefetch={false}>
                   <DropdownMenuItem>
                     Tải xuống
@@ -83,18 +101,19 @@ export default function FileCard(
                         src={file.cloudinaryUrl}
                         fill
                         alt={file.filename}
-                        className="object-contain" // Use object-contain to see the whole image
-                        sizes="95vw"
-                        priority
+                        className="object-cover" // This keeps the aspect ratio while filling the box
+                        sizes="256px"
                     />
                   </div>
               )}
             </DialogContent>
           </Dialog>
-
         </div>
-        <div className={`h-8 flex items-center`}>
-          fasd
+        <div className="flex items-center gap-2 mt-2">
+          <div className="w-6 h-6">
+            <UserAvatar url={file.author?.avatarUrl} />
+          </div>
+          <span className="text-xs text-gray-600 truncate">{file.author?.name}</span>
         </div>
       </div>
   )

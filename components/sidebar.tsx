@@ -21,7 +21,7 @@ import {toast} from "sonner";
 import {Progress} from "@/components/ui/progress";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
 
-export default function Sidebar() {
+export function SidebarContent() {
   const pathname = usePathname()
   let parentId = undefined
   if (pathname && pathname.includes('folders')) {
@@ -79,7 +79,7 @@ export default function Sidebar() {
     }
   }
   return (
-      <aside className={`w-64 border-r bg-gray-50 overflow-y-auto`}>
+      <div className={`h-full flex flex-col`}>
         <div className={`flex items-center justify-start p-2 gap-2`}>
           <Dialog>
             <Tooltip>
@@ -140,6 +140,14 @@ export default function Sidebar() {
           <Input multiple={true} onChange={handleFileChange} accept={`image/*,video/*`} type={`file`} ref={fileInputRef} hidden/>
         </div>
         <Separator/>
+      </div>
+  )
+}
+
+export default function Sidebar() {
+  return (
+      <aside className={`hidden md:block w-64 border-r bg-gray-50 overflow-y-auto h-full`}>
+        <SidebarContent/>
       </aside>
   )
 }

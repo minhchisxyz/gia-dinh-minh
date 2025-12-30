@@ -19,15 +19,16 @@ enum Role {
 }
 
 model User {
-  id       Int       @id @default(autoincrement())
-  role     Role      @default(USER)
-  email    String?   @unique
-  username String    @unique
-  password String
-  name     String
-  comments Comment[]
-  files    File[]
-  folders  Folder[]
+  id        Int       @id @default(autoincrement())
+  role      Role      @default(USER)
+  email     String?   @unique
+  username  String    @unique
+  password  String
+  name      String
+  avatarUrl String?
+  comments  Comment[]
+  files     File[]
+  folders   Folder[]
 }
 
 model Comment {

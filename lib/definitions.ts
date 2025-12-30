@@ -13,6 +13,24 @@ export const LogInFormSchema = z.object({
       .trim()
 })
 
+export const ChangePasswordSchema = z.object({
+  currentPassword: z.string().min(1, { error: 'Vui lòng nhập mật khẩu hiện tại' }),
+  newPassword: z
+      .string()
+      .min(8, { error: 'Mật khẩu mới dài ít nhất 8 chữ cái'})
+      .regex(/[a-zA-Z]/, { error: 'Chứa ít nhất 1 chữ cái.' })
+      .regex(/[0-9]/, { error: 'Chứa ít nhất 1 số.' })
+      .trim(),
+  confirmPassword: z.string()
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Mật khẩu xác nhận không khớp",
+  path: ["confirmPassword"],
+});
+
+export const ChangeEmailSchema = z.object({
+  email: z.string().email({ error: 'Email không hợp lệ' }).trim()
+})
+
 export type FormState = | {
   errors?: {
     username?: string[],
@@ -26,12 +44,31 @@ export type CreateFolderState = {
   error?: string
 } | undefined
 
+export type ChangePasswordState = {
+  errors?: {
+    currentPassword?: string[],
+    newPassword?: string[],
+    confirmPassword?: string[]
+  }
+  message?: string
+  success?: boolean
+} | undefined
+
+export type ChangeEmailState = {
+  errors?: {
+    email?: string[]
+  }
+  message?: string
+  success?: boolean
+} | undefined
+
 export type User = {
   id: number
   username: string
   name: string
   email: string
   role: string
+  avatarUrl?: string | null
   files: File[]
   folders: Folder[]
 }
@@ -63,4 +100,4 @@ export type Folder = {
   parent?: Folder
   subfolders?: Folder[]
   files?: File[]
-} | null
+}
