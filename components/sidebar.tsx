@@ -72,7 +72,8 @@ export function SidebarContent({ comments, folderId }: { comments?: Comment[], f
               if (xhr.status >= 200 && xhr.status < 300) {
                 resolve(JSON.parse(xhr.responseText))
               } else {
-                reject(new Error('Cloudinary upload failed'))
+                console.error('Cloudinary upload failed:', xhr.responseText)
+                reject(new Error(`Cloudinary upload failed: ${xhr.responseText}`))
               }
             }
             xhr.onerror = () => reject(new Error('Cloudinary upload failed'))

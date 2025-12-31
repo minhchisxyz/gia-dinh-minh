@@ -9,6 +9,7 @@ import {Readable} from "stream";
 import cloudinary from "@/lib/cloudinary";
 import {UploadApiResponse} from "cloudinary";
 import sharp from "sharp";
+import {headers} from "next/headers";
 
 export async function getFolder(id?: number): Promise<Folder | null> {
   const includeOptions = {
@@ -610,6 +611,9 @@ export async function prepareUpload(fileName: string, fileType: string, fileSize
   const session = await auth()
   if (!session?.user?.id) throw new Error('Unauthorized')
 
+  const headersList = await headers()
+  const origin = headersList.get('origin') || ''
+
   let driveParentId = process.env.DRIVE_FOLDER_ID
   if (parentId) {
     const parentFolder = await prisma.folder.findUnique({ where: { id: parentId } })
@@ -631,7 +635,7 @@ export async function prepareUpload(fileName: string, fileType: string, fileSize
 
   if (fileType.startsWith('video/')) {
     paramsToSign.eager = 'w_1280,h_720,c_limit,q_auto,f_auto'
-    paramsToSign.eager_async = true
+    paramsToSign.eager_async = 'true'
   }
 
   const signature = cloudinary.utils.api_sign_request(paramsToSign, process.env.CLOUDINARY_API_SECRET!)
@@ -651,7 +655,8 @@ export async function prepareUpload(fileName: string, fileType: string, fileSize
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
       'X-Upload-Content-Type': fileType,
-      'X-Upload-Content-Length': fileSize.toString()
+      'X-Upload-Content-Length': fileSize.toString(),
+      ...(origin && { 'Origin': origin })
     },
     body: JSON.stringify({
       name: fileName,
