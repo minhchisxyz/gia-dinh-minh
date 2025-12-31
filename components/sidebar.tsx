@@ -11,7 +11,7 @@ import {
   DialogTrigger
 } from "@/components/ui/dialog";
 import {Input} from "@/components/ui/input";
-import {createFolder, getUploadCredentials, saveFileRecord} from "@/lib/actions/files";
+import {createFolder, uploadFile} from "@/lib/actions/files";
 import {usePathname} from "next/navigation";
 import {ChangeEvent, useActionState, useRef} from "react";
 import {FieldError, FieldGroup, FieldSet} from "@/components/ui/field";
@@ -50,55 +50,16 @@ export function SidebarContent({ comments, folderId }: { comments?: Comment[], f
             description: <Progress value={Math.round((count / files.length) * 100)} />
           })
 
-          // 1. Get credentials
-          const credentials = await getUploadCredentials(file.name, file.type, file.size, parentId)
-
-          // 2. Upload to Drive
-          const driveUploadRes = await fetch(credentials.drive.uploadUrl, {
-            method: 'PUT',
-            body: file
-          })
-
-          if (!driveUploadRes.ok) {
-             throw new Error('Failed to upload to Google Drive')
-          }
-          const driveData = await driveUploadRes.json()
-
-          // 3. Upload to Cloudinary
-          const cloudinaryFormData = new FormData()
-          cloudinaryFormData.append('file', file)
-          cloudinaryFormData.append('api_key', credentials.cloudinary.apiKey!)
-          cloudinaryFormData.append('timestamp', credentials.cloudinary.timestamp.toString())
-          cloudinaryFormData.append('signature', credentials.cloudinary.signature)
-          cloudinaryFormData.append('folder', credentials.cloudinary.folder)
-          cloudinaryFormData.append('transformation', credentials.cloudinary.transformation)
-          if (credentials.cloudinary.eager) {
-             cloudinaryFormData.append('eager', credentials.cloudinary.eager)
-             cloudinaryFormData.append('eager_async', (credentials.cloudinary.eager_async ?? false).toString())
+          const formData = new FormData()
+          formData.append('file', file)
+          if (parentId) {
+            formData.append('parentId', parentId.toString())
           }
 
-          const cloudinaryRes = await fetch(`https://api.cloudinary.com/v1_1/${credentials.cloudinary.cloudName}/auto/upload`, {
-            method: 'POST',
-            body: cloudinaryFormData
-          })
+          const result = await uploadFile(formData)
 
-          if (!cloudinaryRes.ok) {
-             throw new Error('Failed to upload to Cloudinary')
-          }
-          const cloudinaryData = await cloudinaryRes.json()
-
-          // 4. Save record
-          const saveResult = await saveFileRecord({
-             filename: file.name,
-             mimeType: file.type,
-             size: file.size,
-             driveId: driveData.id,
-             cloudinaryPublicId: cloudinaryData.public_id,
-             parentId: parentId
-          })
-
-          if (!saveResult.success) {
-            throw new Error(saveResult.error as string)
+          if (!result.success) {
+            throw new Error(result.error as string)
           }
 
           count++
