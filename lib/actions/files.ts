@@ -203,7 +203,7 @@ export async function uploadFile(formData: FormData) {
 
   const parentIdStr = formData.get('parentId') as string
   let driveParentId = process.env.DRIVE_FOLDER_ID
-  let dbParentId: number | null = null
+  let dbParentId: number = 0
 
   if (parentIdStr) {
     dbParentId = parseInt(parentIdStr)
@@ -518,7 +518,13 @@ export async function getUploadCredentials(filename: string, mimeType: string, s
       ? "c_limit,w_1280,h_720,q_auto,f_auto"
       : "c_limit,w_2048,q_80"
 
-  const paramsToSign: any = {
+  const paramsToSign: {
+    timestamp: number;
+    folder: string;
+    transformation: string;
+    eager?: string;
+    eager_async?: boolean;
+  } = {
     timestamp,
     folder,
     transformation
@@ -560,6 +566,21 @@ export async function saveFileRecord(fileData: {
   const session = await auth()
   if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
 
+  let dbParentId: number = 0
+  if (fileData.parentId !== undefined) {
+    dbParentId = fileData.parentId as number
+  } else {
+    const mainFolder = await prisma.folder.findUnique({
+      where: {
+        driveId: process.env.DRIVE_FOLDER_ID
+      }
+    })
+    if (!mainFolder) {
+      return { success: false, error: 'Root folder not found' }
+    }
+    dbParentId = mainFolder.id
+  }
+
   try {
     await prisma.file.create({
       data: {
@@ -569,12 +590,12 @@ export async function saveFileRecord(fileData: {
         driveId: fileData.driveId,
         cloudinaryPublicId: fileData.cloudinaryPublicId,
         authorId: parseInt(session.user.id),
-        parentId: fileData.parentId
+        parentId: dbParentId
       }
     })
 
     revalidatePath('/')
-    if (fileData.parentId) revalidatePath(`/folders/${fileData.parentId}`)
+    if (dbParentId) revalidatePath(`/folders/${dbParentId}`)
     return { success: true }
   } catch (error) {
     console.error('Failed to save file record:', error)

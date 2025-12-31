@@ -74,7 +74,7 @@ export function SidebarContent({ comments, folderId }: { comments?: Comment[], f
           cloudinaryFormData.append('transformation', credentials.cloudinary.transformation)
           if (credentials.cloudinary.eager) {
              cloudinaryFormData.append('eager', credentials.cloudinary.eager)
-             cloudinaryFormData.append('eager_async', credentials.cloudinary.eager_async.toString())
+             cloudinaryFormData.append('eager_async', (credentials.cloudinary.eager_async ?? false).toString())
           }
 
           const cloudinaryRes = await fetch(`https://api.cloudinary.com/v1_1/${credentials.cloudinary.cloudName}/auto/upload`, {
