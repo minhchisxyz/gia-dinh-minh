@@ -51,6 +51,7 @@ model File {
   driveId            String    @unique
   cloudinaryPublicId String    @unique
   mimeType           String
+  size               Float     @default(0)
   comments           Comment[]
   authorId           Int
   author             User      @relation(fields: [authorId], references: [id], onDelete: Cascade)

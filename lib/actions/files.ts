@@ -605,3 +605,121 @@ export async function saveFileRecord(fileData: {
     return { success: false, error: 'Failed to save file record' }
   }
 }
+
+export async function prepareUpload(fileName: string, fileType: string, fileSize: number, parentId?: number) {
+  const session = await auth()
+  if (!session?.user?.id) throw new Error('Unauthorized')
+
+  let driveParentId = process.env.DRIVE_FOLDER_ID
+  if (parentId) {
+    const parentFolder = await prisma.folder.findUnique({ where: { id: parentId } })
+    if (parentFolder) driveParentId = parentFolder.driveId
+  }
+
+  // Cloudinary Signature
+  const timestamp = Math.round(new Date().getTime() / 1000)
+  const folder = process.env.CLOUDINARY_FOLDER || 'gia-dinh-minh'
+
+  const paramsToSign: any = {
+    timestamp,
+    folder,
+  }
+
+  if (fileType.startsWith('image/')) {
+    paramsToSign.transformation = 'w_2048,c_limit,q_80'
+  }
+
+  if (fileType.startsWith('video/')) {
+    paramsToSign.eager = 'w_1280,h_720,c_limit,q_auto,f_auto'
+    paramsToSign.eager_async = true
+  }
+
+  const signature = cloudinary.utils.api_sign_request(paramsToSign, process.env.CLOUDINARY_API_SECRET!)
+
+  // Google Drive Upload URL
+  const tokenResponse = await getAccessToken()
+  let token = ''
+  if (typeof tokenResponse === 'string') {
+    token = tokenResponse
+  } else if (tokenResponse && typeof tokenResponse === 'object' && 'token' in tokenResponse) {
+    token = tokenResponse.token as string
+  }
+
+  const driveResponse = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'X-Upload-Content-Type': fileType,
+      'X-Upload-Content-Length': fileSize.toString()
+    },
+    body: JSON.stringify({
+      name: fileName,
+      parents: [driveParentId]
+    })
+  })
+
+  if (!driveResponse.ok) {
+    const errorText = await driveResponse.text()
+    console.error('Drive init failed:', errorText)
+    throw new Error('Failed to initiate Drive upload')
+  }
+
+  const driveUploadUrl = driveResponse.headers.get('Location')
+
+  return {
+    cloudinary: {
+      signature,
+      timestamp,
+      folder,
+      apiKey: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
+      cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+      transformation: paramsToSign.transformation,
+      eager: paramsToSign.eager,
+      eager_async: paramsToSign.eager_async
+    },
+    drive: {
+      uploadUrl: driveUploadUrl
+    }
+  }
+}
+
+export async function saveFile(fileData: {
+  filename: string,
+  mimeType: string,
+  size: number,
+  parentId?: number,
+  cloudinaryPublicId: string,
+  driveId: string
+}) {
+  const session = await auth()
+  if (!session?.user?.id) throw new Error('Unauthorized')
+
+  let dbParentId = fileData.parentId
+  if (!dbParentId) {
+    const mainFolder = await prisma.folder.findUnique({
+      where: {
+        driveId: process.env.DRIVE_FOLDER_ID
+      }
+    })
+    if (!mainFolder) throw new Error('Main folder not found')
+    dbParentId = mainFolder.id
+  }
+
+  await prisma.file.create({
+    data: {
+      filename: fileData.filename,
+      extension: fileData.filename.split('.').pop() || '',
+      mimeType: fileData.mimeType,
+      size: fileData.size,
+      driveId: fileData.driveId,
+      cloudinaryPublicId: fileData.cloudinaryPublicId,
+      authorId: parseInt(session.user.id),
+      parentId: dbParentId
+    }
+  })
+
+  revalidatePath('/')
+  revalidatePath('/folders/[slug]', 'page')
+  return { success: true }
+}

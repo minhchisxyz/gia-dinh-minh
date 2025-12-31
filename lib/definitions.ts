@@ -83,6 +83,7 @@ export type File = {
   cloudinaryUrl: string
   posterUrl?: string
   mimeType: string
+  size: number
   authorId: number
   author: User
   parentId: number
