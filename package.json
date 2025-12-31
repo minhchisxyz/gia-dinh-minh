@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "cloudflare:start": "cloudflared tunnel run gia-dinh-minh",
     "postinstall": "prisma generate",
     "lint": "eslint",
     "prisma:generate": "npx prisma generate",

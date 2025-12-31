@@ -7,6 +7,7 @@ import bcrypt from 'bcrypt'
 
 export const { auth, signIn, signOut } = NextAuth({
   ...authConfig,
+  trustHost: true,
   providers: [
       Credentials({
         async authorize(credentials){
