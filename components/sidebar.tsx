@@ -45,18 +45,22 @@ export function SidebarContent({ comments, folderId }: { comments?: Comment[], f
       try {
         let count = 0
         for (const file of files) {
+          toast.loading(`Đang tải ${file.name} lên...`, {
+            id: toastId,
+            description: <Progress value={Math.round((count / files.length) * 100)} />
+          })
+
           const formData = new FormData()
           formData.append('file', file)
           if (parentId) {
             formData.append('parentId', parentId.toString())
           }
 
-          toast.loading(`Đang tải ${file.name} lên...`, {
-            id: toastId,
-            description: <Progress value={Math.round((count / files.length) * 100)} />
-          })
+          const result = await uploadFile(formData)
 
-          await uploadFile(formData)
+          if (!result.success) {
+            throw new Error(result.error as string)
+          }
 
           count++
           const percent = Math.round((count / files.length) * 100)

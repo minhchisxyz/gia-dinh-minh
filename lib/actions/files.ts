@@ -1,6 +1,6 @@
 'use server'
 
-import drive from "@/lib/googleDrive";
+import drive, {getAccessToken} from "@/lib/googleDrive";
 import {revalidatePath} from "next/cache";
 import {auth} from "@/auth";
 import prisma from "@/lib/prisma";
@@ -203,7 +203,7 @@ export async function uploadFile(formData: FormData) {
 
   const parentIdStr = formData.get('parentId') as string
   let driveParentId = process.env.DRIVE_FOLDER_ID
-  let dbParentId: number | null = null
+  let dbParentId: number = 0
 
   if (parentIdStr) {
     dbParentId = parseInt(parentIdStr)
@@ -474,5 +474,134 @@ export async function deleteItems(fileIds: number[], folderIds: number[]) {
   } catch (error) {
     console.error('Error deleting items:', error)
     return { success: false, error: 'Failed to delete items' }
+  }
+}
+
+export async function getUploadCredentials(filename: string, mimeType: string, size: number, parentId?: number) {
+  const session = await auth()
+  if (!session?.user?.id) throw new Error('Unauthorized')
+
+  // 1. Get Google Drive Resumable Upload URL
+  let driveParentId = process.env.DRIVE_FOLDER_ID
+  if (parentId) {
+    const parentFolder = await prisma.folder.findUnique({ where: { id: parentId } })
+    if (parentFolder) driveParentId = parentFolder.driveId
+  }
+
+  // Let's use fetch to get the session URI manually to avoid library limitations/confusion
+  const accessToken = await getAccessToken()
+  const driveUploadUrl = `https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true`
+
+  const driveInitResponse = await fetch(driveUploadUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken.token}`,
+      'Content-Type': 'application/json',
+      'X-Upload-Content-Type': mimeType,
+      'X-Upload-Content-Length': size.toString()
+    },
+    body: JSON.stringify({
+      name: filename,
+      parents: driveParentId ? [driveParentId] : []
+    })
+  })
+
+  const driveSessionUri = driveInitResponse.headers.get('Location')
+  if (!driveSessionUri) throw new Error('Failed to create Drive upload session')
+
+  // 2. Get Cloudinary Signature
+  const timestamp = Math.round(new Date().getTime() / 1000)
+  const folder = process.env.CLOUDINARY_FOLDER || 'gia-dinh-minh'
+
+  const isVideo = mimeType.startsWith('video/')
+  const transformation = isVideo
+      ? "c_limit,w_1280,h_720,q_auto,f_auto"
+      : "c_limit,w_2048,q_80"
+
+  const paramsToSign: {
+    timestamp: number;
+    folder: string;
+    transformation: string;
+    eager?: string;
+    eager_async?: boolean;
+  } = {
+    timestamp,
+    folder,
+    transformation
+  }
+
+  // Eager transformation for video if needed (matching previous logic)
+  if (isVideo) {
+    paramsToSign.eager = "w_1280,h_720,c_limit,q_auto,f_auto"
+    paramsToSign.eager_async = true
+  }
+
+  const signature = cloudinary.utils.api_sign_request(paramsToSign, process.env.CLOUDINARY_API_SECRET!)
+
+  return {
+    drive: {
+      uploadUrl: driveSessionUri
+    },
+    cloudinary: {
+      signature,
+      timestamp,
+      folder,
+      apiKey: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
+      cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+      transformation,
+      eager: paramsToSign.eager,
+      eager_async: paramsToSign.eager_async
+    }
+  }
+}
+
+export async function saveFileRecord(fileData: {
+  filename: string,
+  mimeType: string,
+  size: number,
+  driveId: string,
+  cloudinaryPublicId: string,
+  parentId?: number
+}) {
+  const session = await auth()
+  if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
+
+  let dbParentId: number = 0
+  if (fileData.parentId !== undefined) {
+    dbParentId = fileData.parentId as number
+  } else {
+    const mainFolder = await prisma.folder.findUnique({
+      where: {
+        driveId: process.env.DRIVE_FOLDER_ID
+      }
+    })
+    if (!mainFolder) {
+      return { success: false, error: 'Root folder not found' }
+    }
+    dbParentId = mainFolder.id
+  }
+
+  try {
+    await prisma.file.create({
+      data: {
+        filename: fileData.filename,
+        extension: fileData.filename.split('.').pop() || '',
+        mimeType: fileData.mimeType,
+        driveId: fileData.driveId,
+        cloudinaryPublicId: fileData.cloudinaryPublicId,
+        authorId: parseInt(session.user.id),
+        parentId: dbParentId
+      }
+    })
+
+    revalidatePath('/')
+    if (dbParentId) revalidatePath(`/folders/${dbParentId}`)
+    return { success: true }
+  } catch (error) {
+    console.error('Failed to save file record:', error)
+    // Try to cleanup if save fails
+    await deleteByCloudinaryPublicId(fileData.cloudinaryPublicId)
+    await deleteByDriveId(fileData.driveId)
+    return { success: false, error: 'Failed to save file record' }
   }
 }
