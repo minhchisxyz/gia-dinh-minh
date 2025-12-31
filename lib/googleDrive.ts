@@ -1,7 +1,8 @@
 import {google, drive_v3} from "googleapis"
-import {GoogleAuth} from "google-auth-library"
+import {GoogleAuth, OAuth2Client} from "google-auth-library"
 
 let drive: drive_v3.Drive
+let authClient: any
 
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.GOOGLE_REFRESH_TOKEN) {
   const oauth2Client = new google.auth.OAuth2(
@@ -12,6 +13,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.
   oauth2Client.setCredentials({
     refresh_token: process.env.GOOGLE_REFRESH_TOKEN
   })
+  authClient = oauth2Client
   drive = google.drive({ version: 'v3', auth: oauth2Client })
 } else {
   const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n')
@@ -33,8 +35,12 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.
 
 
   const auth = new GoogleAuth(authOptions)
+  authClient = auth
 
   drive = google.drive({ version: 'v3', auth })
 }
 
 export default drive
+export async function getAccessToken() {
+  return authClient.getAccessToken()
+}
