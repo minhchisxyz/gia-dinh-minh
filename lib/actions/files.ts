@@ -8,6 +8,7 @@ import {CreateFolderState, Folder} from "@/lib/definitions";
 import {Readable} from "stream";
 import cloudinary from "@/lib/cloudinary";
 import {UploadApiResponse} from "cloudinary";
+import sharp from "sharp";
 
 export async function getFolder(id?: number): Promise<Folder | null> {
   const includeOptions = {
@@ -92,6 +93,21 @@ export async function getFolderPath(folderId?: number) {
 async function uploadToCloudinary(file: File, buffer: Buffer) {
   console.log(`Uploading ${file.name} to Cloudinary...`)
   const isVideo = file.type.startsWith('video/')
+  const isImage = file.type.startsWith('image/')
+
+  let uploadBuffer = buffer
+  if (isImage) {
+    try {
+      uploadBuffer = await sharp(buffer, { failOn: 'none' })
+          .rotate()
+          .resize({ width: 2048, withoutEnlargement: true })
+          .jpeg({ quality: 80 })
+          .toBuffer()
+    } catch (e) {
+      console.error('Failed to optimize image for Cloudinary', e)
+    }
+  }
+
   return new Promise<UploadApiResponse>((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
@@ -124,7 +140,7 @@ async function uploadToCloudinary(file: File, buffer: Buffer) {
       }
     )
     const stream = new Readable()
-    stream.push(buffer)
+    stream.push(uploadBuffer)
     stream.push(null)
     stream.pipe(uploadStream)
   })
