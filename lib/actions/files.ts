@@ -91,7 +91,7 @@ export async function getFolderPath(folderId?: number) {
 }
 
 async function uploadToCloudinary(file: File, buffer: Buffer) {
-  console.log(`Uploading ${file.name} to Cloudinary...`)
+  console.log(`Uploading ${file.name} to Cloudinary... Original size: ${buffer.length}`)
   const isVideo = file.type.startsWith('video/')
   const isImage = file.type.startsWith('image/')
 
@@ -104,9 +104,27 @@ async function uploadToCloudinary(file: File, buffer: Buffer) {
           .jpeg({ quality: 80 })
           .toBuffer()
     } catch (e) {
-      console.error('Failed to optimize image for Cloudinary', e)
+      console.error('Failed to optimize image for Cloudinary (full pipeline)', e)
+      try {
+        // Try without rotate, sometimes metadata causes issues
+        uploadBuffer = await sharp(buffer, { failOn: 'none' })
+            .resize({ width: 2048, withoutEnlargement: true })
+            .jpeg({ quality: 80 })
+            .toBuffer()
+      } catch (e2) {
+        console.error('Failed to optimize image for Cloudinary (no rotate)', e2)
+        try {
+          // Try minimal re-encoding
+          uploadBuffer = await sharp(buffer, { failOn: 'none' })
+              .jpeg({ quality: 80 })
+              .toBuffer()
+        } catch (e3) {
+          console.error('Failed to optimize image for Cloudinary (minimal)', e3)
+        }
+      }
     }
   }
+  console.log(`Uploading to Cloudinary. Buffer size: ${uploadBuffer.length}`)
 
   return new Promise<UploadApiResponse>((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
@@ -169,10 +187,20 @@ async function uploadToDrive(file: File, buffer: Buffer, driveParentId: string |
 }
 
 export async function uploadFile(formData: FormData) {
+  console.log('Starting uploadFile server action')
   const session = await auth()
-  if (!session?.user?.id) return { success: false, error: 'Chưa đăng nhập' }
+  if (!session?.user?.id) {
+    console.log('User not authenticated')
+    return { success: false, error: 'Chưa đăng nhập' }
+  }
 
   const file = formData.get('file') as File
+  if (file) {
+    console.log(`Received file: ${file.name}, size: ${file.size}, type: ${file.type}`)
+  } else {
+    console.error('No file received in formData')
+  }
+
   const parentIdStr = formData.get('parentId') as string
   let driveParentId = process.env.DRIVE_FOLDER_ID
   let dbParentId: number | null = null
