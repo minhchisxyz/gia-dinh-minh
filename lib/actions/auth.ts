@@ -1,10 +1,9 @@
 'use server'
 
-import {FormState, LogInFormSchema} from "@/lib/definitions";
-import {signIn, signOut} from "@/auth";
-import { AuthError } from "next-auth";
-import {z} from "zod";
-
+import {FormState, LogInFormSchema} from "@/lib/definitions"
+import {signIn, signOut} from "@/auth"
+import { AuthError } from "next-auth"
+import {z} from "zod"
 export async function authenticate(
     prevState: FormState,
     formData: FormData
@@ -20,9 +19,11 @@ export async function authenticate(
           password: errors.properties?.password?.errors
         },
         message: 'Vui lòng điền đúng định dạng.'
-      };
+      }
     }
-    await signIn('credentials', formData)
+    await signIn('credentials', {
+      ...Object.fromEntries(formData),
+    })
   } catch (error) {
     if (error instanceof AuthError) {
       switch (error.type) {

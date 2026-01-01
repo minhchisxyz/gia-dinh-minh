@@ -1,16 +1,12 @@
 'use client'
 
-import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/components/ui/field";
-import {Input} from "@/components/ui/input";
-import {Button} from "@/components/ui/button";
-import {authenticate} from "@/lib/actions/auth";
-import {useActionState} from "react";
-import {Spinner} from "@/components/ui/spinner";
-import {useSearchParams} from "next/navigation";
-
+import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/components/ui/field"
+import {Input} from "@/components/ui/input"
+import {Button} from "@/components/ui/button"
+import {authenticate} from "@/lib/actions/auth"
+import {useActionState} from "react"
+import {Spinner} from "@/components/ui/spinner"
 export default function LoginForm() {
-  const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get('callbackUrl') || '/'
   const [state, formAction, isPending] = useActionState(
       authenticate,
       undefined,
@@ -39,7 +35,6 @@ export default function LoginForm() {
               ))}
             </Field>
           </FieldGroup>
-          <Input type={`hidden`} name={`redirectTo`} value={callbackUrl}/>
           <Button type={`submit`} variant={`outline`}>
             {
               isPending ? <Spinner/> : <span>Đăng nhập</span>

@@ -1,35 +1,34 @@
 'use client'
 
-import FolderCard from "@/components/folder-card";
-import Sidebar, {SidebarContent} from "@/components/sidebar";
-import {Folder} from "@/lib/definitions";
+import FolderCard from "@/components/folder-card"
+import Sidebar, {SidebarContent} from "@/components/sidebar"
+import {Folder} from "@/lib/definitions"
 import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbSeparator
-} from "@/components/ui/breadcrumb";
-import {Fragment, useEffect, useState} from "react";
-import Link from "next/link";
-import {usePathname} from "next/navigation";
-import FileCard from "@/components/file-card";
-import {CheckSquare, Download, EllipsisVertical, Heart, Menu, Trash2, X} from "lucide-react";
-import {Button} from "@/components/ui/button";
+} from "@/components/ui/breadcrumb"
+import {Fragment, useEffect, useState} from "react"
+import Link from "next/link"
+import {usePathname} from "next/navigation"
+import FileCard from "@/components/file-card"
+import {CheckSquare, Download, EllipsisVertical, Heart, Menu, Trash2, X} from "lucide-react"
+import {Button} from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem, DropdownMenuSeparator, DropdownMenuShortcut,
   DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
-import {getFilesForDownload, deleteItems} from "@/lib/actions/files";
-import {toast} from "sonner";
-import {useIsMobile} from "@/hooks/use-mobile";
-import {Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger} from "@/components/ui/drawer";
-import {toggleLove} from "@/lib/actions/interactions";
-import {cn} from "@/lib/utils";
-
+} from "@/components/ui/dropdown-menu"
+import {getFilesForDownload, deleteItems} from "@/lib/actions/files"
+import {toast} from "sonner"
+import {useIsMobile} from "@/hooks/use-mobile"
+import {Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger} from "@/components/ui/drawer"
+import {toggleLove} from "@/lib/actions/interactions"
+import {cn} from "@/lib/utils"
 export default function FolderPage(
     { folder, folderPath, currentUserId }: {
       folder: Folder,
@@ -88,7 +87,7 @@ export default function FolderPage(
         for (const file of files) {
           toast.loading(`Đang tải ${count + 1}/${files.length}: ${file.filename}`, { id: toastId })
           const link = document.createElement('a')
-          link.href = `/api/drive/download/${file.driveId}`
+          link.href = file.url
           link.download = file.filename
           document.body.appendChild(link)
           link.click()

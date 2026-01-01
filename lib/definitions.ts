@@ -25,8 +25,7 @@ export const ChangePasswordSchema = z.object({
 }).refine((data) => data.newPassword === data.confirmPassword, {
   message: "Mật khẩu xác nhận không khớp",
   path: ["confirmPassword"],
-});
-
+})
 export const ChangeEmailSchema = z.object({
   email: z.string().email({ error: 'Email không hợp lệ' }).trim()
 })
@@ -78,11 +77,10 @@ export type File = {
   id: number
   filename: string
   extension: string
-  driveId: string
-  cloudinaryPublicId: string
-  cloudinaryUrl: string
-  posterUrl?: string
+  url: string
+  posterUrl?: string | null
   mimeType: string
+  size: number
   authorId: number
   author: User
   parentId: number
@@ -115,8 +113,8 @@ export type Comment = {
 export type Folder = {
   // Folder structure
   id: number
-  driveId: string
   name: string
+  path: string
   authorId: number
   createdTime: Date
   parentId: number | null

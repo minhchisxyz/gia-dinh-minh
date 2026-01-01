@@ -92,12 +92,12 @@ export default function AvatarUploader({ url }: { url?: string | null }) {
       setIsPending(true)
       const croppedImageBlob = await getCroppedImg(imageSrc, croppedAreaPixels)
       const file = new File([croppedImageBlob], 'avatar.jpg', { type: 'image/jpeg' })
-
+      
       const formData = new FormData()
       formData.append('file', file)
 
       const result = await updateAvatar(formData)
-
+      
       if (result.success) {
         toast.success(result.message)
         setImageSrc(null)

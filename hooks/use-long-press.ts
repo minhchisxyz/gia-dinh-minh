@@ -1,12 +1,10 @@
-import { useCallback, useRef, useState } from "react"
-
+import { useCallback, useRef } from "react"
 const useLongPress = (
     onLongPress: () => void,
     { delay = 500 } = {}
 ) => {
     const timeout = useRef<NodeJS.Timeout | null>(null)
     const isLongPress = useRef(false)
-
     const start = useCallback(() => {
         isLongPress.current = false
         timeout.current = setTimeout(() => {
@@ -14,20 +12,17 @@ const useLongPress = (
             isLongPress.current = true
         }, delay)
     }, [onLongPress, delay])
-
     const clear = useCallback(() => {
         if (timeout.current) {
             clearTimeout(timeout.current)
         }
     }, [])
-
     const onClick = useCallback((e: React.MouseEvent) => {
         if (isLongPress.current) {
             e.preventDefault()
             e.stopPropagation()
         }
     }, [])
-
     return {
         onMouseDown: start,
         onTouchStart: start,
@@ -37,6 +32,4 @@ const useLongPress = (
         onClick
     }
 }
-
 export default useLongPress
-

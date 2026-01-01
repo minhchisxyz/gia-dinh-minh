@@ -1,7 +1,7 @@
 'use client'
 
-import {FileUp, FolderPlus} from "lucide-react";
-import {Button} from "@/components/ui/button";
+import {FileUp, FolderPlus} from "lucide-react"
+import {Button} from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -9,22 +9,22 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger
-} from "@/components/ui/dialog";
-import {Input} from "@/components/ui/input";
-import {createFolder, uploadFile} from "@/lib/actions/files";
-import {usePathname} from "next/navigation";
-import {ChangeEvent, useActionState, useRef} from "react";
-import {FieldError, FieldGroup, FieldSet} from "@/components/ui/field";
-import {Spinner} from "@/components/ui/spinner";
-import {Separator} from "@/components/ui/separator";
-import {toast} from "sonner";
-import {Progress} from "@/components/ui/progress";
-import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
-import CommentSection from "@/components/comment-section";
-import {Comment} from "@/lib/definitions";
-
+} from "@/components/ui/dialog"
+import {Input} from "@/components/ui/input"
+import {createFolder, uploadFile} from "@/lib/actions/files"
+import {usePathname, useRouter} from "next/navigation"
+import {ChangeEvent, startTransition, useActionState, useRef} from "react"
+import {FieldError, FieldGroup, FieldSet} from "@/components/ui/field"
+import {Spinner} from "@/components/ui/spinner"
+import {Separator} from "@/components/ui/separator"
+import {toast} from "sonner"
+import {Progress} from "@/components/ui/progress"
+import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip"
+import CommentSection from "@/components/comment-section"
+import {Comment} from "@/lib/definitions"
 export function SidebarContent({ comments, folderId }: { comments?: Comment[], folderId?: number }) {
   const pathname = usePathname()
+  const router = useRouter()
   let parentId = folderId
   if (!parentId && pathname && pathname.includes('folders')) {
     parentId = Number.parseInt(pathname.split('/')[2])
@@ -45,18 +45,24 @@ export function SidebarContent({ comments, folderId }: { comments?: Comment[], f
       try {
         let count = 0
         for (const file of files) {
+          toast.loading(`Đang tải ${file.name} lên...`, {
+            id: toastId,
+            description: <Progress value={Math.round((count / files.length) * 100)} />
+          })
+
           const formData = new FormData()
           formData.append('file', file)
           if (parentId) {
             formData.append('parentId', parentId.toString())
           }
 
-          toast.loading(`Đang tải ${file.name} lên...`, {
-            id: toastId,
-            description: <Progress value={Math.round((count / files.length) * 100)} />
+          const result = await uploadFile(formData)
+          if (!result.success) {
+            throw new Error(result.error || 'Upload failed')
+          }
+          startTransition(() => {
+            router.refresh()
           })
-
-          await uploadFile(formData)
 
           count++
           const percent = Math.round((count / files.length) * 100)
@@ -139,7 +145,7 @@ export function SidebarContent({ comments, folderId }: { comments?: Comment[], f
             </TooltipContent>
           </Tooltip>
 
-          <Input multiple={true} onChange={handleFileChange} accept={`image/*,video/*`} type={`file`} ref={fileInputRef} hidden/>
+          <Input multiple={true} onChange={handleFileChange} accept="image/*,video/*,.heic,.HEIC" type="file" ref={fileInputRef} hidden/>
         </div>
         <Separator/>
         {comments && (

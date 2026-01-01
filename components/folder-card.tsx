@@ -1,18 +1,17 @@
-import {Folder} from "@/lib/definitions";
-import Link from "next/link";
-import {Check, EllipsisVertical, Folder as FolderIcon, Trash2} from "lucide-react";
+import {Folder} from "@/lib/definitions"
+import Link from "next/link"
+import {Check, EllipsisVertical, Folder as FolderIcon, Trash2} from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem, DropdownMenuShortcut,
   DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
-import {deleteFolder} from "@/lib/actions/files";
-import {Dispatch, SetStateAction} from "react";
-import {Checkbox} from "@/components/ui/checkbox";
-import useLongPress from "@/hooks/use-long-press";
-
+} from "@/components/ui/dropdown-menu"
+import {deleteFolder} from "@/lib/actions/files"
+import {Dispatch, SetStateAction} from "react"
+import {Checkbox} from "@/components/ui/checkbox"
+import useLongPress from "@/hooks/use-long-press"
 export default function FolderCard(
     { folder, isSelected, hasSelection, setSelectedFoldersAction }: {
       folder: Folder,
@@ -34,7 +33,7 @@ export default function FolderCard(
 
   return (
 
-      <div
+      <div 
         {...longPressProps}
         className={`flex w-full md:w-64 items-center bg-blue-50 hover:bg-[#e7f0ff] rounded-md p-3 cursor-pointer group`}
       >

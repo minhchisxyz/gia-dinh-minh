@@ -109,7 +109,7 @@ export default function CommentSection({
                     {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: vi })}
                   </span>
                 </div>
-                <p className="text-sm text-gray-700 wrap-break-word whitespace-pre-wrap">{comment.content}</p>
+                <p className="text-sm text-gray-700 break-words whitespace-pre-wrap">{comment.content}</p>
               </div>
             </div>
           ))

@@ -1,13 +1,11 @@
 'use server'
 
-import {ChangePasswordSchema, ChangePasswordState, ChangeEmailSchema, ChangeEmailState} from "@/lib/definitions";
-import {auth} from "@/auth";
-import prisma from "@/lib/prisma";
-import bcrypt from "bcrypt";
-import {revalidatePath} from "next/cache";
-import cloudinary from "@/lib/cloudinary";
-import {UploadApiResponse} from "cloudinary";
-
+import {ChangePasswordSchema, ChangePasswordState, ChangeEmailSchema, ChangeEmailState} from "@/lib/definitions"
+import {auth} from "@/auth"
+import prisma from "@/lib/prisma"
+import bcrypt from "bcrypt"
+import {revalidatePath} from "next/cache"
+import {saveFile, deleteLocalFile} from "@/lib/localFileHandler"
 export async function changePassword(prevState: ChangePasswordState, formData: FormData): Promise<ChangePasswordState> {
   const validatedFields = ChangePasswordSchema.safeParse(Object.fromEntries(formData.entries()))
 
@@ -129,34 +127,15 @@ export async function updateAvatar(formData: FormData) {
   }
 
   try {
-    const arrayBuffer = await file.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
-
-    const result = await new Promise<UploadApiResponse>((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        {
-          resource_type: 'image',
-          folder: `${process.env.CLOUDINARY_FOLDER || 'gia-dinh-minh'}/avatars`,
-          public_id: `avatar_${session.user?.id}`,
-          overwrite: true,
-          transformation: [{
-            width: 400,
-            height: 400,
-            crop: "fill",
-            gravity: "face"
-          }]
-        },
-        (error, result) => {
-          if (error) reject(error)
-          else resolve(result!)
-        }
-      )
-      uploadStream.end(buffer)
-    })
+    const { url } = await saveFile(file, 'avatars')
+    const currentUser = await prisma.user.findUnique({ where: { id: parseInt(session.user.id) } })
+    if (currentUser?.avatarUrl) {
+        await deleteLocalFile(currentUser.avatarUrl)
+    }
 
     await prisma.user.update({
       where: { id: parseInt(session.user.id) },
-      data: { avatarUrl: result.secure_url }
+      data: { avatarUrl: url }
     })
 
     revalidatePath('/account')

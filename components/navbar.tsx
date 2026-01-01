@@ -1,12 +1,11 @@
 'use client'
 
-import Image from "next/image";
-import Link from "next/link";
-import {logOut} from "@/lib/actions/auth";
-import {Button} from "@/components/ui/button";
-import {LogOut, Home, User} from "lucide-react";
-import {usePathname} from "next/navigation";
-
+import Image from "next/image"
+import Link from "next/link"
+import {logOut} from "@/lib/actions/auth"
+import {Button} from "@/components/ui/button"
+import {LogOut, Home, User} from "lucide-react"
+import {usePathname} from "next/navigation"
 export default function Navbar() {
   const links = [
     {
@@ -36,9 +35,9 @@ export default function Navbar() {
             links.map(link => {
                 const Icon = link.icon
                 return (
-                    <Link
-                        className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${isActive(link.href) ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100 text-gray-600'}`}
-                        key={link.href}
+                    <Link 
+                        className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${isActive(link.href) ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100 text-gray-600'}`} 
+                        key={link.href} 
                         href={link.href}
                     >
                       <Icon className="h-5 w-5" />

@@ -1,28 +1,26 @@
 'use client'
 
-import {File} from "@/lib/definitions";
-import Image from "next/image";
-import {Check, Clapperboard, Download, EllipsisVertical, Heart, Image as ImageIcon, MessageCircle, Trash2} from "lucide-react";
+import {File} from "@/lib/definitions"
+import Image from "next/image"
+import {Check, Clapperboard, Download, EllipsisVertical, Heart, Image as ImageIcon, MessageCircle, Trash2} from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem, DropdownMenuSeparator, DropdownMenuShortcut,
   DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
-import Link from "next/link";
-import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger} from "@/components/ui/dialog";
-import {deleteFile} from "@/lib/actions/files";
-import {Dispatch, SetStateAction} from "react";
-import {Checkbox} from "@/components/ui/checkbox";
-import UserAvatar from "@/components/user-avatar";
-import {toggleLove} from "@/lib/actions/interactions";
-import {usePathname} from "next/navigation";
-import {cn} from "@/lib/utils";
-import {useEffect, useState} from "react";
-import CommentSection from "@/components/comment-section";
-import useLongPress from "@/hooks/use-long-press";
-
+} from "@/components/ui/dropdown-menu"
+import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger} from "@/components/ui/dialog"
+import {deleteFile} from "@/lib/actions/files"
+import {Dispatch, SetStateAction} from "react"
+import {Checkbox} from "@/components/ui/checkbox"
+import UserAvatar from "@/components/user-avatar"
+import {toggleLove} from "@/lib/actions/interactions"
+import {usePathname} from "next/navigation"
+import {cn} from "@/lib/utils"
+import {useEffect, useState} from "react"
+import CommentSection from "@/components/comment-section"
+import useLongPress from "@/hooks/use-long-press"
 export default function FileCard(
     { file, isSelected, hasSelection, setSelectedFilesAction, currentUserId }: {
       file: File,
@@ -39,8 +37,10 @@ export default function FileCard(
   const [loveCount, setLoveCount] = useState(file.loves?.length || 0)
 
   useEffect(() => {
-    setIsLoved(file.loves?.some(love => love.userId === currentUserId))
-    setLoveCount(file.loves?.length || 0)
+    const loved = file.loves?.some(love => love.userId === currentUserId)
+    const count = file.loves?.length || 0
+    setIsLoved(loved)
+    setLoveCount(count)
   }, [file.loves, currentUserId])
 
   const [isCommentOpen, setIsCommentOpen] = useState(false)
@@ -97,14 +97,14 @@ export default function FileCard(
                     <Check/>
                   </DropdownMenuShortcut>
                 </DropdownMenuItem>
-                <Link href={`/api/drive/download/${file.driveId}`} prefetch={false}>
+                <a href={file.url} download={file.filename}>
                   <DropdownMenuItem>
                     Tải xuống
                     <DropdownMenuShortcut>
                       <Download/>
                     </DropdownMenuShortcut>
                   </DropdownMenuItem>
-                </Link>
+                </a>
                 <DropdownMenuSeparator/>
                 <DropdownMenuItem onClick={async () => await deleteFile(file.id)}>
                   Xoá
@@ -121,12 +121,13 @@ export default function FileCard(
           <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
             <DialogTrigger asChild>
               <Image
-                  src={isVideo ? file.posterUrl || '/' : file.cloudinaryUrl}
+                  src={isVideo ? file.posterUrl || '/' : file.url}
                   fill
                   alt={file.filename}
                   className="object-cover cursor-pointer" // This keeps the aspect ratio while filling the box
                   sizes="256px"
                   onClick={() => setIsPreviewOpen(true)}
+                  unoptimized
               />
             </DialogTrigger>
             <DialogContent
@@ -144,7 +145,7 @@ export default function FileCard(
                         className="max-h-full max-w-full rounded-lg shadow-2xl"
                         autoPlay
                     >
-                      <source src={file.cloudinaryUrl} type={file.mimeType} />
+                      <source src={file.url} type={file.mimeType} />
                     </video>
                   </div>
               ) : (
@@ -153,11 +154,12 @@ export default function FileCard(
                     onClick={(e) => e.stopPropagation()}
                   >
                     <Image
-                        src={file.cloudinaryUrl}
+                        src={file.url}
                         fill
                         alt={file.filename}
                         className="object-contain"
                         sizes="100vw"
+                        unoptimized
                     />
                   </div>
               )}

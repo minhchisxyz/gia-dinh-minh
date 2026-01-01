@@ -1,16 +1,18 @@
 'use server'
 
-import drive from "@/lib/googleDrive";
-import {revalidatePath} from "next/cache";
-import {auth} from "@/auth";
-import prisma from "@/lib/prisma";
-import {CreateFolderState, Folder} from "@/lib/definitions";
-import {Readable} from "stream";
-import cloudinary from "@/lib/cloudinary";
-import {UploadApiResponse} from "cloudinary";
-import sharp from "sharp";
-
+import {revalidatePath} from "next/cache"
+import {auth} from "@/auth"
+import prisma from "@/lib/prisma"
+import {CreateFolderState, Folder} from "@/lib/definitions"
+import {
+  createLocalFolder,
+  deleteLocalFile,
+  deleteLocalFolder,
+  ensureUploadsDir,
+  saveFile
+} from "@/lib/localFileHandler"
 export async function getFolder(id?: number): Promise<Folder | null> {
+  await ensureUploadsDir()
   const includeOptions = {
     subfolders: {
       include: {
@@ -44,24 +46,40 @@ export async function getFolder(id?: number): Promise<Folder | null> {
       }
     }
   }
-  const folder = id ? await prisma.folder.findUnique({
-    where: {id},
-    include: includeOptions
-  }) : await prisma.folder.findUnique({
-    where: {
-      driveId: process.env.DRIVE_FOLDER_ID
-    },
-    include: includeOptions
-  })
-  if (!folder) return null
-  const getCloudinaryUrl = (mimeType: string, publicId: string) => `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/${mimeType.split('/')[0]}/upload/f_auto,q_auto/${publicId}`
-  folder.files = folder.files.map(file => ({
-    ...file,
-    cloudinaryUrl: getCloudinaryUrl(file.mimeType, file.cloudinaryPublicId),
-    ...(file.mimeType.startsWith('video/') && {
-      posterUrl: `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/video/upload/f_auto,q_auto,so_0/${file.cloudinaryPublicId}.jpg`
+
+  let folder
+  if (id) {
+    folder = await prisma.folder.findUnique({
+      where: {id},
+      include: includeOptions
     })
-  }))
+  } else {
+    // Find root folder
+    folder = await prisma.folder.findFirst({
+      where: {
+        parentId: null
+      },
+      include: includeOptions
+    })
+
+    if (!folder) {
+        const session = await auth()
+        if (session?.user?.id) {
+             folder = await prisma.folder.create({
+                data: {
+                    name: 'Root',
+                    path: '/uploads',
+                    authorId: parseInt(session.user.id),
+                    parentId: null
+                },
+                include: includeOptions
+             })
+        }
+    }
+  }
+
+  if (!folder) return null
+
   return folder as unknown as Folder
 }
 
@@ -69,12 +87,10 @@ export async function getFolderPath(folderId?: number) {
   const path = []
   let current
   if (!folderId) {
-    current = await prisma.folder.findUnique({
-      where: {
-        driveId: process.env.DRIVE_FOLDER_ID
-      }
-    })
-    return current ? [{name: current.name, href: '/'}] : []
+     const rootFolder = await prisma.folder.findFirst({
+       where: { parentId: null }
+     })
+     return [{name: rootFolder?.name || 'Root', href: '/'}]
   } else {
     current = await prisma.folder.findUnique({where: {id: folderId}})
     if (!current) return []
@@ -83,111 +99,15 @@ export async function getFolderPath(folderId?: number) {
   while (current?.parentId) {
     current = await prisma.folder.findUnique({where: {id: current.parentId}})
     if (current) {
-      if (current.driveId === process.env.DRIVE_FOLDER_ID) path.unshift({name: current.name, href: '/'})
+      if (current.parentId === null) path.unshift({name: current.name, href: '/'})
       else path.unshift({name: current.name, href: `/folders/${current.id}`})
     }
   }
   return path
 }
 
-async function uploadToCloudinary(file: File, buffer: Buffer) {
-  console.log(`Uploading ${file.name} to Cloudinary... Original size: ${buffer.length}`)
-  const isVideo = file.type.startsWith('video/')
-  const isImage = file.type.startsWith('image/')
-
-  let uploadBuffer = buffer
-  if (isImage) {
-    try {
-      uploadBuffer = await sharp(buffer, { failOn: 'none' })
-          .rotate()
-          .resize({ width: 2048, withoutEnlargement: true })
-          .jpeg({ quality: 80 })
-          .toBuffer()
-    } catch (e) {
-      console.error('Failed to optimize image for Cloudinary (full pipeline)', e)
-      try {
-        // Try without rotate, sometimes metadata causes issues
-        uploadBuffer = await sharp(buffer, { failOn: 'none' })
-            .resize({ width: 2048, withoutEnlargement: true })
-            .jpeg({ quality: 80 })
-            .toBuffer()
-      } catch (e2) {
-        console.error('Failed to optimize image for Cloudinary (no rotate)', e2)
-        try {
-          // Try minimal re-encoding
-          uploadBuffer = await sharp(buffer, { failOn: 'none' })
-              .jpeg({ quality: 80 })
-              .toBuffer()
-        } catch (e3) {
-          console.error('Failed to optimize image for Cloudinary (minimal)', e3)
-        }
-      }
-    }
-  }
-  console.log(`Uploading to Cloudinary. Buffer size: ${uploadBuffer.length}`)
-
-  return new Promise<UploadApiResponse>((resolve, reject) => {
-    const uploadStream = cloudinary.uploader.upload_stream(
-      {
-        resource_type: 'auto',
-        folder: process.env.CLOUDINARY_FOLDER || 'gia-dinh-minh',
-        transformation: [{
-          quality: 'auto',
-          fetch_format: 'auto',
-          ...(isVideo && {
-            eager: [{
-              width: 1280,
-              height: 720,
-              crop: "limit",
-              quality: "auto",
-              fetch_format: "auto" }],
-            eager_async: true,
-          })
-        }]
-      },
-      (error, result) => {
-        if (error) {
-          console.error(`Failed to upload ${file.name} to Cloudinary:`, error)
-          reject(error)
-        }
-        else if (result) {
-          console.log(`Finished uploading ${file.name} to Cloudinary`)
-          resolve(result)
-        }
-        else reject(new Error('Cloudinary upload failed'))
-      }
-    )
-    const stream = new Readable()
-    stream.push(uploadBuffer)
-    stream.push(null)
-    stream.pipe(uploadStream)
-  })
-}
-
-async function uploadToDrive(file: File, buffer: Buffer, driveParentId: string | undefined) {
-  console.log(`Uploading ${file.name} to Google Drive...`)
-  const stream = new Readable()
-  stream.push(buffer)
-  stream.push(null)
-
-  const result = await drive.files.create({
-    requestBody: {
-      name: file.name,
-      parents: driveParentId ? [driveParentId] : [],
-    },
-    media: {
-      mimeType: file.type,
-      body: stream,
-    },
-    fields: 'id, name',
-    supportsAllDrives: true,
-  })
-  console.log(`Finished uploading ${file.name} to Google Drive`)
-  return result
-}
-
 export async function uploadFile(formData: FormData) {
-  console.log('Starting uploadFile server action')
+  console.log('Uploading file...')
   const session = await auth()
   if (!session?.user?.id) {
     console.log('User not authenticated')
@@ -195,107 +115,87 @@ export async function uploadFile(formData: FormData) {
   }
 
   const file = formData.get('file') as File
-  if (file) {
-    console.log(`Received file: ${file.name}, size: ${file.size}, type: ${file.type}`)
-  } else {
+  if (!file) {
     console.error('No file received in formData')
+    return { success: false, error: 'No file received' }
   }
 
   const parentIdStr = formData.get('parentId') as string
-  let driveParentId = process.env.DRIVE_FOLDER_ID
-  let dbParentId: number | null = null
-
+  let dbParentId: number | null
+  let parentPath = ''
   if (parentIdStr) {
     dbParentId = parseInt(parentIdStr)
     const parentFolder = await prisma.folder.findUnique({ where: { id: dbParentId } })
     if (parentFolder) {
-      driveParentId = parentFolder.driveId
+      parentPath = parentFolder.path
+    } else {
+        return { success: false, error: 'Parent folder not found' }
     }
   } else {
-    const mainFolder = await prisma.folder.findUnique({
-      where: {
-        driveId: process.env.DRIVE_FOLDER_ID
-      }
+    const rootFolder = await prisma.folder.findFirst({
+        where: { parentId: null }
     })
-    if (!mainFolder) {
-      console.error('Main folder not found.')
-      return {
-        success: false,
-        error: 'Chưa có thư mục chính, liên hệ Minh Chí ngay'
-      }
+    if (!rootFolder) {
+         const newRoot = await prisma.folder.create({
+            data: {
+                name: 'Root',
+                path: '/uploads',
+                authorId: parseInt(session.user.id),
+                parentId: null
+            }
+         })
+         dbParentId = newRoot.id
+         parentPath = '/uploads'
+    } else {
+        dbParentId = rootFolder.id
+        parentPath = rootFolder.path
     }
-    dbParentId = mainFolder.id
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer())
-
   try {
-    const results = await Promise.allSettled([
-      uploadToCloudinary(file, buffer),
-      uploadToDrive(file, buffer, driveParentId)
-    ])
-
-    const cloudinaryResult = results[0]
-    const driveResult = results[1]
-
-    if (cloudinaryResult.status === 'fulfilled' && driveResult.status === 'fulfilled') {
-      const cRes = cloudinaryResult.value
-      const dRes = driveResult.value
-
-      if (!dRes.data.id) {
-        console.log('Removing file from Cloudinary...')
-        await deleteByCloudinaryPublicId(cRes.public_id)
-        console.error('Drive upload failed to return ID')
-        return { success: false, error: 'Drive upload failed' }
-      }
-      await prisma.file.create({
-        data: {
-          filename: file.name,
-          extension: file.name.split('.').pop() || '',
-          mimeType: file.type,
-          driveId: dRes.data.id,
-          cloudinaryPublicId: cRes.public_id,
-          authorId: parseInt(session.user.id),
-          parentId: dbParentId
+    const { url, posterUrl, filename, size } = await saveFile(file, parentPath)
+    let mimeType = file.type
+    const ext = filename.split('.').pop()?.toLowerCase() || ''
+    if (ext === 'jpg' || ext === 'jpeg') {
+        if (mimeType === 'image/heic' || mimeType === 'image/heif' || file.name.toLowerCase().endsWith('.heic')) {
+            mimeType = 'image/jpeg'
         }
-      })
-
-      revalidatePath('/')
-      if (dbParentId) revalidatePath(`/folders/${dbParentId}`)
-      return { success: true }
-    } else {
-      if (cloudinaryResult.status === 'fulfilled') {
-        console.log('Removing file from Cloudinary...')
-        await deleteByCloudinaryPublicId(cloudinaryResult.value.public_id)
-      }
-      if (driveResult.status === 'fulfilled' && driveResult.value.data.id) {
-        console.log('Removing file from Google Drive...')
-        await deleteByDriveId(driveResult.value.data.id)
-      }
-      const errors = results.filter(r => r.status === 'rejected').map(r => (r as PromiseRejectedResult).reason)
-      console.error('One or both uploads failed', errors)
-      return { success: false, error: 'Upload failed' }
     }
+
+    await prisma.file.create({
+        data: {
+          filename: filename,
+          extension: ext,
+          mimeType: mimeType,
+          url: url,
+          posterUrl: posterUrl,
+          size: size,
+          authorId: parseInt(session.user.id),
+          parentId: dbParentId!
+        }
+    })
+
+    revalidatePath('/')
+    if (dbParentId) revalidatePath(`/folders/${dbParentId}`)
+    return { success: true }
   } catch (error) {
     console.error(error)
-    return { success: false }
+    return { success: false, error: 'Upload failed' }
   }
 }
 
 export async function deleteFile(id: number) {
+  console.log(`Deleting file ${id}...`)
   const file = await prisma.file.findUnique({where: {id}})
   if (!file) {
     console.error(`File ${id} not found`)
     return
   }
   const parentId = file.parentId
-  await Promise.all([
-      drive.files.delete({fileId: file.driveId}),
-      cloudinary.uploader.destroy(file.cloudinaryPublicId, {
-        resource_type: file.mimeType.startsWith('video/') ? 'video' : 'image'
-      }),
-      prisma.file.delete({where: {id}})
-  ])
+
+  await deleteLocalFile(file.url, file.posterUrl)
+  await prisma.file.delete({where: {id}})
+
   revalidatePath('/')
   revalidatePath(`/folders/${parentId}`)
 }
@@ -314,14 +214,14 @@ async function getAllFilesInFolder(id: number) {
   return files
 }
 
-export async function getFilesForDownload(fileIds: number[], folderIds: number[]) {
+export async function getFilesForDownload(fileIds: number[], folderIds: number[]): Promise<{url: string, filename: string}[]> {
   const files = await prisma.file.findMany({
     where: { id: { in: fileIds } },
-    select: { driveId: true, filename: true }
+    select: { url: true, filename: true }
   })
 
   const folderFilesResults = await Promise.all(folderIds.map(id => getAllFilesInFolder(id)))
-  const folderFiles = folderFilesResults.flat().map(f => ({ driveId: f.driveId, filename: f.filename }))
+  const folderFiles = folderFilesResults.flat().map(f => ({ url: f.url, filename: f.filename }))
 
   return [...files, ...folderFiles]
 }
@@ -336,24 +236,11 @@ export async function deleteFolder(id: number) {
       console.error(`Folder ${id} not found`)
       return
     }
-    const files = await getAllFilesInFolder(id)
-    const imagePublicIds = files.filter(file => file.mimeType.startsWith('image/')).map(file => file.cloudinaryPublicId)
-    const videoPublicIds = files.filter(file => file.mimeType.startsWith('video/')).map(file => file.cloudinaryPublicId)
-    await Promise.all([
-      imagePublicIds.length > 0
-          ? cloudinary.api.delete_resources(imagePublicIds, { resource_type: 'image' })
-          : null,
-      videoPublicIds.length > 0
-          ? cloudinary.api.delete_resources(videoPublicIds, { resource_type: 'video' })
-          : null,
-    ].filter(Boolean))
+
+    await deleteLocalFolder(folder.path)
+    await prisma.folder.delete({where: {id}})
+
     const parentId = folder.parentId
-    await Promise.all([
-      prisma.folder.delete({where: {id}}),
-      drive.files.delete({
-        fileId: folder.driveId
-      })
-    ])
     revalidatePath('/')
     if (parentId) revalidatePath(`/folders/${parentId}`)
   } catch (e) {
@@ -362,38 +249,47 @@ export async function deleteFolder(id: number) {
 }
 
 export async function createFolder(dbParentId: number | undefined, prevState: CreateFolderState, formData: FormData) {
+  console.log('Creating folder...')
   const session = await auth()
   if (!session?.user?.id) return { success: false, error: 'Chưa đăng nhập' }
-  // Find parent ID
+
   let parentId = dbParentId
-  let driveParentId
-  // if parentId is not specified, use main folder as parent
+  let parentPath = ''
+
   if (!parentId) {
-    const mainFolder = await prisma.folder.findUnique({
-      where: {
-        driveId: process.env.DRIVE_FOLDER_ID
-      }
+    const rootFolder = await prisma.folder.findFirst({
+        where: { parentId: null }
     })
-    if (!mainFolder) {
-      console.error('Main folder not found.')
-      return {
-        success: false,
-        error: 'Chưa có thư mục chính, liên hệ Minh Chí ngay'
-      }
+    if (!rootFolder) {
+         const newRoot = await prisma.folder.create({
+            data: {
+                name: 'Root',
+                path: '/uploads',
+                authorId: parseInt(session.user.id),
+                parentId: null
+            }
+         })
+         parentId = newRoot.id
+         parentPath = '/uploads'
+    } else {
+        parentId = rootFolder.id
+        parentPath = rootFolder.path
     }
-    parentId = mainFolder.id
-    driveParentId = mainFolder.driveId
   } else {
     const parentFolder = await prisma.folder.findUnique({
       where: {id: parentId}
     })
-    if (parentFolder) driveParentId = parentFolder.driveId
+    if (parentFolder) {
+        parentPath = parentFolder.path
+    } else {
+        return { success: false, error: 'Parent folder not found' }
+    }
   }
 
-  // Find folder name
   const baseFolderName = formData.get('folder-name') as string || 'Thư mục chưa đặt tên'
   let folderName = baseFolderName
   let counter = 1
+
   let existingFolder = await prisma.folder.findFirst({
     where: {
       parentId: parentId,
@@ -411,26 +307,17 @@ export async function createFolder(dbParentId: number | undefined, prevState: Cr
   }
 
   try {
-    const response = await drive.files.create({
-      requestBody: {
-        name: folderName,
-        mimeType: 'application/vnd.google-apps.folder',
-        parents: driveParentId ? [driveParentId] : [],
-      },
-      fields: 'id, name',
-      supportsAllDrives: true,
-    })
-    const folder = response.data
-    if (folder && folder.id) {
-      await prisma.folder.create({
+    const newFolderPath = parentPath ? `${parentPath}/${folderName}` : folderName
+    await createLocalFolder(newFolderPath)
+    await prisma.folder.create({
         data: {
           name: folderName,
-          driveId: folder.id,
+          path: newFolderPath,
           authorId: Number.parseInt(session?.user.id),
           parentId: parentId
         }
-      })
-    }
+    })
+
     const path = dbParentId ? `/folders/${parentId}` : '/'
     revalidatePath(path)
     revalidatePath('/')
@@ -439,28 +326,8 @@ export async function createFolder(dbParentId: number | undefined, prevState: Cr
     console.error(error)
     return {
       success: false,
-      error: `Lỗi tạo thư mục, lưu lại lỗi sau và liên hệ Minh Chí ngay: ${error}. `
+      error: `Lỗi tạo thư mục: ${error}`
     }
-  }
-}
-
-export async function deleteByCloudinaryPublicId(publicId: string) {
-  try {
-    await cloudinary.uploader.destroy(publicId)
-    return { success: true }
-  } catch (error) {
-    console.error('Error deleting from Cloudinary:', error)
-    return { success: false, error }
-  }
-}
-
-export async function deleteByDriveId(driveId: string) {
-  try {
-    await drive.files.delete({ fileId: driveId })
-    return { success: true }
-  } catch (error) {
-    console.error('Error deleting from Drive:', error)
-    return { success: false, error }
   }
 }
 

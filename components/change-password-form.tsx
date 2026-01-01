@@ -1,13 +1,12 @@
 'use client'
 
-import {useActionState} from "react";
-import {changePassword} from "@/lib/actions/user";
-import {Button} from "@/components/ui/button";
-import {Input} from "@/components/ui/input";
-import {Label} from "@/components/ui/label";
-import {toast} from "sonner";
-import {useEffect, useRef} from "react";
-
+import {useActionState} from "react"
+import {changePassword} from "@/lib/actions/user"
+import {Button} from "@/components/ui/button"
+import {Input} from "@/components/ui/input"
+import {Label} from "@/components/ui/label"
+import {toast} from "sonner"
+import {useEffect, useRef} from "react"
 export default function ChangePasswordForm() {
   const [state, formAction, isPending] = useActionState(changePassword, undefined)
   const formRef = useRef<HTMLFormElement>(null)

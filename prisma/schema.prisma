@@ -45,19 +45,20 @@ model Comment {
 }
 
 model File {
-  id                 Int       @id @default(autoincrement())
-  filename           String
-  extension          String
-  driveId            String    @unique
-  cloudinaryPublicId String    @unique
-  mimeType           String
-  comments           Comment[]
-  authorId           Int
-  author             User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  parent             Folder    @relation(fields: [parentId], references: [id], onDelete: Cascade)
-  parentId           Int
-  loves              Love[]
-  createdTime        DateTime  @default(now())
+  id          Int       @id @default(autoincrement())
+  filename    String
+  extension   String
+  url         String
+  posterUrl   String?
+  mimeType    String
+  size        Int       @default(0)
+  comments    Comment[]
+  authorId    Int
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent      Folder    @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  parentId    Int
+  loves       Love[]
+  createdTime DateTime  @default(now())
 }
 
 model Love {
@@ -75,7 +76,7 @@ model Love {
 model Folder {
   id          Int       @id @default(autoincrement())
   name        String
-  driveId     String    @unique
+  path        String
   comments    Comment[]
   authorId    Int
   author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)

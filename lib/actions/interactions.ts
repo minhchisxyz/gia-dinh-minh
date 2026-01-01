@@ -13,6 +13,11 @@ export async function toggleLove(fileId: number | undefined, folderId: number | 
   const userId = parseInt(session.user.id)
 
   try {
+    // Actually, Prisma handles nulls in unique constraints differently depending on DB.
+    // But here we have @@unique([userId, fileId, folderId]).
+    // If fileId is Int?, it can be null.
+    // Let's use findFirst instead to be safe or construct where properly.
+
     const existingLove = await prisma.love.findFirst({
       where: {
         userId,

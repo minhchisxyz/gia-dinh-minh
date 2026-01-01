@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Gia Đình Mình
+
+A private cloud storage application for family memories, built with Next.js.
+
+## Features
+
+- **File Management**: Upload, view, and download photos and videos.
+- **Folder Organization**: Create and manage folders to organize your memories.
+- **Interactions**: Love/Like files and folders.
+- **Comments**: Discuss and share thoughts on specific files.
+- **User Accounts**: Secure authentication and role-based access.
+- **Mobile Friendly**: Responsive design that works great on mobile devices.
+- **Local Storage**: Files are stored locally on the server, keeping your data private.
+
+## Prerequisites
+
+- Node.js (v18 or later recommended)
+- PostgreSQL Database
+- pnpm (Package manager)
 
 ## Getting Started
 
-First, run the development server:
+1.  **Clone the repository:**
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+    ```bash
+    git clone <repository-url>
+    cd gia-dinh-minh
+    ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2.  **Install dependencies:**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+    ```bash
+    pnpm install
+    ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3.  **Environment Setup:**
 
-## Learn More
+    Create a `.env` file in the root directory. You primarily need to configure the `DATABASE_URL` for the application to function.
 
-To learn more about Next.js, take a look at the following resources:
+    ```env
+    # Connection string to your PostgreSQL database
+    DATABASE_URL="postgresql://user:password@localhost:5432/gia_dinh_minh?schema=public"
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+    # Secret for NextAuth (generate one using `npx auth secret` or `openssl rand -base64 32`)
+    AUTH_SECRET="your-secret-key"
+    ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+4.  **Database Setup:**
 
-## Deploy on Vercel
+    Run the Prisma migrations to set up your database schema:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+    ```bash
+    npx prisma migrate deploy
+    ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+    (Optional) Seed the database with initial data:
+
+    ```bash
+    npx prisma db seed
+    ```
+
+5.  **Run the Application:**
+
+    ```bash
+    pnpm dev
+    ```
+
+    Open [http://localhost:3000](http://localhost:3000) with your browser.
+
+## Usage
+
+- **Login**: Use your credentials to log in.
+- **Upload**: Click the upload button in the sidebar (desktop) or navigation (mobile) to upload images or videos.
+- **Create Folder**: Organize files by creating new folders.
+- **View**: Click on files to view them in a lightbox.
+- **Interact**: Use the heart icon to love items and the comment section to leave messages.
+

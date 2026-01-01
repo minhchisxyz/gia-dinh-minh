@@ -1,13 +1,12 @@
 'use client'
 
-import {useActionState} from "react";
-import {changeEmail} from "@/lib/actions/user";
-import {Button} from "@/components/ui/button";
-import {Input} from "@/components/ui/input";
-import {Label} from "@/components/ui/label";
-import {toast} from "sonner";
-import {useEffect, useRef} from "react";
-
+import {useActionState} from "react"
+import {changeEmail} from "@/lib/actions/user"
+import {Button} from "@/components/ui/button"
+import {Input} from "@/components/ui/input"
+import {Label} from "@/components/ui/label"
+import {toast} from "sonner"
+import {useEffect, useRef} from "react"
 export default function ChangeEmailForm({ currentEmail }: { currentEmail?: string | null }) {
   const [state, formAction, isPending] = useActionState(changeEmail, undefined)
   const formRef = useRef<HTMLFormElement>(null)
@@ -25,13 +24,13 @@ export default function ChangeEmailForm({ currentEmail }: { currentEmail?: strin
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <div className="flex gap-2">
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            defaultValue={currentEmail || ''}
+          <Input 
+            id="email" 
+            name="email" 
+            type="email" 
+            defaultValue={currentEmail || ''} 
             placeholder="Nhập email của bạn"
-            required
+            required 
           />
           <Button type="submit" disabled={isPending}>
             {isPending ? 'Đang lưu...' : 'Lưu'}

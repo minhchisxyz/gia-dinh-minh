@@ -1,20 +1,16 @@
-import { auth } from "@/auth";
-import prisma from "@/lib/prisma";
-import AvatarUploader from "@/components/avatar-uploader";
-import ChangePasswordForm from "@/components/change-password-form";
-import ChangeEmailForm from "@/components/change-email-form";
-import { Separator } from "@/components/ui/separator";
-
+import { auth } from "@/auth"
+import prisma from "@/lib/prisma"
+import AvatarUploader from "@/components/avatar-uploader"
+import ChangePasswordForm from "@/components/change-password-form"
+import ChangeEmailForm from "@/components/change-email-form"
+import { Separator } from "@/components/ui/separator"
 export default async function AccountPage() {
-  const session = await auth();
-  if (!session?.user?.id) return null;
-
+  const session = await auth()
+  if (!session?.user?.id) return null
   const user = await prisma.user.findUnique({
     where: { id: parseInt(session.user.id) },
-  });
-
-  if (!user) return null;
-
+  })
+  if (!user) return null
   return (
     <div className="h-full overflow-y-auto bg-white">
       <div className="container mx-auto p-6 max-w-2xl">
@@ -47,5 +43,5 @@ export default async function AccountPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }
