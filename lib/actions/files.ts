@@ -11,6 +11,7 @@ import {
   ensureUploadsDir,
   saveFile
 } from "@/lib/localFileHandler"
+
 export async function getFolder(id?: number): Promise<Folder | null> {
   await ensureUploadsDir()
   const includeOptions = {
@@ -121,6 +122,7 @@ export async function uploadFile(formData: FormData) {
   }
 
   const parentIdStr = formData.get('parentId') as string
+  console.log(`ParentId: ${parentIdStr}`)
   let dbParentId: number | null
   let parentPath = ''
   if (parentIdStr) {
@@ -153,6 +155,11 @@ export async function uploadFile(formData: FormData) {
   }
 
   try {
+    // Ensure parentPath is not empty, default to /uploads
+    if (!parentPath) {
+      parentPath = '/uploads'
+    }
+    console.log(`Uploading file to parentPath: "${parentPath}"`)
     const { url, posterUrl, filename, size } = await saveFile(file, parentPath)
     let mimeType = file.type
     const ext = filename.split('.').pop()?.toLowerCase() || ''

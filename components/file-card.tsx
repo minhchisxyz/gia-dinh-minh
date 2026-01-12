@@ -132,36 +132,25 @@ export default function FileCard(
             </DialogTrigger>
             <DialogContent
               showCloseButton={false}
-              className="max-w-[80vw] w-full h-[80vh] p-0 border-none shadow-none bg-transparent flex items-center justify-center outline-none"
-              onClick={() => setIsPreviewOpen(false)}
+              className="w-auto h-auto max-w-none max-h-none p-0 border-none shadow-none bg-transparent flex items-center justify-center outline-none"
             >
               <DialogHeader className="hidden">
                 <DialogTitle />
               </DialogHeader>
               {isVideo ? (
-                  <div onClick={(e) => e.stopPropagation()} className="contents">
-                    <video
-                        controls
-                        className="max-h-full max-w-full rounded-lg shadow-2xl"
-                        autoPlay
-                    >
-                      <source src={file.url} type={file.mimeType} />
-                    </video>
-                  </div>
-              ) : (
-                  <div
-                    className="relative w-full h-full flex items-center justify-center"
-                    onClick={(e) => e.stopPropagation()}
+                  <video
+                      controls
+                      className="max-h-[80vh] max-w-[80vw] rounded-lg shadow-2xl"
+                      autoPlay
                   >
-                    <Image
-                        src={file.url}
-                        fill
-                        alt={file.filename}
-                        className="object-contain"
-                        sizes="100vw"
-                        unoptimized
-                    />
-                  </div>
+                    <source src={file.url} type={file.mimeType} />
+                  </video>
+              ) : (
+                  <img
+                      src={file.url}
+                      alt={file.filename}
+                      className="max-h-[80vh] max-w-[80vw] object-contain rounded-lg shadow-2xl"
+                  />
               )}
             </DialogContent>
           </Dialog>
