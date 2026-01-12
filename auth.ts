@@ -33,7 +33,6 @@ export const { auth, signIn, signOut } = NextAuth({
     maxAge: 30 * 24 * 60 * 60,
 
     // How frequently to "update" the cookie to extend the session
-    // This makes it a "sliding" session (resets the 30 days every time they visit)
     updateAge: 24 * 60 * 60, // 24 hours
   },
   callbacks: {
