@@ -23,6 +23,7 @@ export async function authenticate(
     }
     await signIn('credentials', {
       ...Object.fromEntries(formData),
+      redirectTo: '/'
     })
   } catch (error) {
     if (error instanceof AuthError) {
