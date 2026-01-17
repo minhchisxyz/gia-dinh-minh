@@ -37,7 +37,7 @@ self.addEventListener('notificationclick', function (event) {
     return
   }
 
-  const baseUrl = 'https://localhost:3000'
+  const baseUrl = 'https://giadinhminh.mchisxyz.id.vn'
   const urlToOpen = event.notification.data.url
       ? baseUrl + event.notification.data.url
       : baseUrl + '/admin'
@@ -50,7 +50,7 @@ self.addEventListener('notificationclick', function (event) {
         // Check if app is already open
         for (let i = 0; i < windowClients.length; i++) {
           const client = windowClients[i]
-          if (client.url.includes('localhost:3000') && 'focus' in client) {
+          if (client.url.includes('giadinhminh.mchisxyz.id.vn') && 'focus' in client) {
             return client.focus()
           }
         }
