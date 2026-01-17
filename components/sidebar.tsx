@@ -22,9 +22,11 @@ import {Progress} from "@/components/ui/progress"
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip"
 import CommentSection from "@/components/comment-section"
 import {Comment} from "@/lib/definitions"
+
 export function SidebarContent({ comments, folderId }: { comments?: Comment[], folderId?: number }) {
   const pathname = usePathname()
   const router = useRouter()
+
   let parentId = folderId
   if (!parentId && pathname && pathname.includes('folders')) {
     parentId = Number.parseInt(pathname.split('/')[2])
@@ -86,6 +88,7 @@ export function SidebarContent({ comments, folderId }: { comments?: Comment[], f
       }
     }
   }
+
   return (
       <div className={`h-full flex flex-col`}>
         <div className={`flex items-center justify-center p-2 gap-5`}>
@@ -144,7 +147,6 @@ export function SidebarContent({ comments, folderId }: { comments?: Comment[], f
               </p>
             </TooltipContent>
           </Tooltip>
-
           <Input multiple={true} onChange={handleFileChange} accept="image/*,video/*,.heic,.HEIC" type="file" ref={fileInputRef} hidden/>
         </div>
         <Separator/>

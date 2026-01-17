@@ -25,10 +25,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 import {getFilesForDownload, deleteItems} from "@/lib/actions/files"
 import {toast} from "sonner"
-import {useIsMobile} from "@/hooks/use-mobile"
+import {useIsMobile} from "@/lib/hooks/use-mobile"
 import {Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger} from "@/components/ui/drawer"
 import {toggleLove} from "@/lib/actions/interactions"
 import {cn} from "@/lib/utils"
+
 export default function FolderPage(
     { folder, folderPath, currentUserId }: {
       folder: Folder,

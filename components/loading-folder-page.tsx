@@ -17,7 +17,7 @@ import {
   BreadcrumbList,
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
-import {useIsMobile} from "@/hooks/use-mobile";
+import {useIsMobile} from "@/lib/hooks/use-mobile";
 import UserAvatar from "@/components/user-avatar";
 
 function FolderCardSkeleton() {

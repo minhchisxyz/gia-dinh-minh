@@ -20,7 +20,7 @@ import {usePathname} from "next/navigation"
 import {cn} from "@/lib/utils"
 import {useEffect, useState} from "react"
 import CommentSection from "@/components/comment-section"
-import useLongPress from "@/hooks/use-long-press"
+import useLongPress from "@/lib/hooks/use-long-press"
 export default function FileCard(
     { file, isSelected, hasSelection, setSelectedFilesAction, currentUserId }: {
       file: File,

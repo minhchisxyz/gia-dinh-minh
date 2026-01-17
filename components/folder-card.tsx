@@ -11,7 +11,7 @@ import {
 import {deleteFolder} from "@/lib/actions/files"
 import {Dispatch, SetStateAction} from "react"
 import {Checkbox} from "@/components/ui/checkbox"
-import useLongPress from "@/hooks/use-long-press"
+import useLongPress from "@/lib/hooks/use-long-press"
 export default function FolderCard(
     { folder, isSelected, hasSelection, setSelectedFoldersAction }: {
       folder: Folder,
