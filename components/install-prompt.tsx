@@ -48,9 +48,9 @@ export default function InstallPrompt() {
             </button>
         )}
         {isIOS && (
-            <p className="text-sm text-gray-600">
-              Để tải: nhấn nút <strong>Chia sẻ</strong> <span role="img">⎋</span>
-              và chọn <strong>"Add to Home Screen"</strong> <span role="img">➕</span>.
+            <p className="text-sm text-gray-600 mt-2">
+              Để cài đặt: Nhấn vào nút <strong>Chia sẻ</strong> <span role="img" aria-label="share icon">⎋</span>
+              sau đó chọn <strong>"Thêm vào MH chính"</strong> <span role="img" aria-label="plus icon">➕</span>.
             </p>
         )}
       </div>
