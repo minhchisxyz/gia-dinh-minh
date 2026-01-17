@@ -44,13 +44,13 @@ export default function InstallPrompt() {
                 onClick={handleInstallClick}
                 className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700"
             >
-              Install App
+              Tải xuống
             </button>
         )}
         {isIOS && (
             <p className="text-sm text-gray-600">
-              To install: Tap the <strong>Share</strong> button <span role="img">⎋</span>
-              and select <strong>"Add to Home Screen"</strong> <span role="img">➕</span>.
+              Để tải: nhấn nút <strong>Chia sẻ</strong> <span role="img">⎋</span>
+              và chọn <strong>"Add to Home Screen"</strong> <span role="img">➕</span>.
             </p>
         )}
       </div>

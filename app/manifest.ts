@@ -3,7 +3,7 @@ import type { MetadataRoute } from 'next'
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Đại Gia Đình',
-    short_name: 'ĐạiGiaĐình',
+    short_name: 'Đại Gia Đình',
     description: 'Nơi lưu giữ kỉ niệm gia đình',
     start_url: '/',
     display: 'standalone',
