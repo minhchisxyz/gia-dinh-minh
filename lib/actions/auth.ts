@@ -4,6 +4,7 @@ import {FormState, LogInFormSchema} from "@/lib/definitions"
 import {signIn, signOut} from "@/auth"
 import { AuthError } from "next-auth"
 import {z} from "zod"
+
 export async function authenticate(
     prevState: FormState,
     formData: FormData

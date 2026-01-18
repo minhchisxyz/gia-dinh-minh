@@ -111,7 +111,6 @@ export type Comment = {
 }
 
 export type Folder = {
-  // Folder structure
   id: number
   name: string
   path: string
@@ -125,10 +124,9 @@ export type Folder = {
   comments: Comment[]
 }
 
-export interface WebPushSubscription {
+export interface Subscription {
   endpoint: string
-  keys: {
-    p256dh: string
-    auth: string
-  }
+  p256dhKey: string
+  authKey: string
+  userId: number
 }

@@ -11,6 +11,9 @@ import {
   ensureUploadsDir,
   saveFile
 } from "@/lib/localFileHandler"
+import Logger from "@/lib/logger";
+
+const LOGGER = new Logger('FILES')
 
 export async function getFolder(id?: number): Promise<Folder | null> {
   await ensureUploadsDir()
@@ -108,21 +111,19 @@ export async function getFolderPath(folderId?: number) {
 }
 
 export async function uploadFile(formData: FormData) {
-  console.log('Uploading file...')
   const session = await auth()
   if (!session?.user?.id) {
-    console.log('User not authenticated')
+    LOGGER.error('User not authenticated')
     return { success: false, error: 'Chưa đăng nhập' }
   }
 
   const file = formData.get('file') as File
   if (!file) {
-    console.error('No file received in formData')
+    LOGGER.error('No file received in formData')
     return { success: false, error: 'No file received' }
   }
 
   const parentIdStr = formData.get('parentId') as string
-  console.log(`ParentId: ${parentIdStr}`)
   let dbParentId: number | null
   let parentPath = ''
   if (parentIdStr) {
@@ -159,7 +160,6 @@ export async function uploadFile(formData: FormData) {
     if (!parentPath) {
       parentPath = '/uploads'
     }
-    console.log(`Uploading file to parentPath: "${parentPath}"`)
     const { url, posterUrl, filename, size } = await saveFile(file, parentPath)
     let mimeType = file.type
     const ext = filename.split('.').pop()?.toLowerCase() || ''
@@ -181,27 +181,33 @@ export async function uploadFile(formData: FormData) {
           parentId: dbParentId!
         }
     })
-
+    LOGGER.info(`User ${session.user.username} has uploaded file "${filename}" to "${parentPath}"`)
     revalidatePath('/')
     if (dbParentId) revalidatePath(`/folders/${dbParentId}`)
     return { success: true }
   } catch (error) {
-    console.error(error)
+    LOGGER.error(`${error}`)
     return { success: false, error: 'Upload failed' }
   }
 }
 
 export async function deleteFile(id: number) {
-  console.log(`Deleting file ${id}...`)
+  const session = await auth()
+  if (!session?.user?.id) {
+    LOGGER.error('User not authenticated')
+    return
+  }
   const file = await prisma.file.findUnique({where: {id}})
   if (!file) {
-    console.error(`File ${id} not found`)
+    LOGGER.error(`File ${id} not found`)
     return
   }
   const parentId = file.parentId
 
   await deleteLocalFile(file.url, file.posterUrl)
   await prisma.file.delete({where: {id}})
+
+  LOGGER.info(`File ${id} has been deleted by user ${session.user.username}`)
 
   revalidatePath('/')
   revalidatePath(`/folders/${parentId}`)
@@ -240,7 +246,7 @@ export async function deleteFolder(id: number) {
       include: {files: true, subfolders: true}
     })
     if (!folder) {
-      console.error(`Folder ${id} not found`)
+      LOGGER.error(`Folder ${id} not found`)
       return
     }
 
@@ -251,12 +257,11 @@ export async function deleteFolder(id: number) {
     revalidatePath('/')
     if (parentId) revalidatePath(`/folders/${parentId}`)
   } catch (e) {
-    console.error(e)
+    LOGGER.error(`Error deleting folder ${id}: ${e}`)
   }
 }
 
 export async function createFolder(dbParentId: number | undefined, prevState: CreateFolderState, formData: FormData) {
-  console.log('Creating folder...')
   const session = await auth()
   if (!session?.user?.id) return { success: false, error: 'Chưa đăng nhập' }
 
@@ -324,13 +329,13 @@ export async function createFolder(dbParentId: number | undefined, prevState: Cr
           parentId: parentId
         }
     })
-
+    LOGGER.info(`User ${session.user.username} has created folder "${folderName}" in "${parentPath}"`)
     const path = dbParentId ? `/folders/${parentId}` : '/'
     revalidatePath(path)
     revalidatePath('/')
     return { success: true }
   } catch (error) {
-    console.error(error)
+    LOGGER.error(`Error creating folder: ${error}`)
     return {
       success: false,
       error: `Lỗi tạo thư mục: ${error}`
@@ -346,7 +351,7 @@ export async function deleteItems(fileIds: number[], folderIds: number[]) {
     ])
     return { success: true }
   } catch (error) {
-    console.error('Error deleting items:', error)
+    LOGGER.error(`Error deleting items: ${error}`)
     return { success: false, error: 'Failed to delete items' }
   }
 }

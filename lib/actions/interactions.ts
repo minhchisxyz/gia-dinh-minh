@@ -3,6 +3,9 @@
 import { auth } from "@/auth"
 import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
+import Logger from "@/lib/logger";
+
+const LOGGER = new Logger('INTERACTIONS')
 
 export async function toggleLove(fileId: number | undefined, folderId: number | undefined, path: string) {
   const session = await auth()
@@ -13,11 +16,6 @@ export async function toggleLove(fileId: number | undefined, folderId: number | 
   const userId = parseInt(session.user.id)
 
   try {
-    // Actually, Prisma handles nulls in unique constraints differently depending on DB.
-    // But here we have @@unique([userId, fileId, folderId]).
-    // If fileId is Int?, it can be null.
-    // Let's use findFirst instead to be safe or construct where properly.
-
     const existingLove = await prisma.love.findFirst({
       where: {
         userId,
@@ -46,7 +44,7 @@ export async function toggleLove(fileId: number | undefined, folderId: number | 
       return { success: true, loved: true }
     }
   } catch (error) {
-    console.error('Error toggling love:', error)
+    LOGGER.error(`Error toggling love: ${error}`)
     return { success: false, message: 'Có lỗi xảy ra' }
   }
 }

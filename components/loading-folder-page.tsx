@@ -41,7 +41,7 @@ function FileCardSkeleton() {
           className={`w-full h-72 md:w-64 md:h-64 flex flex-col bg-blue-50 hover:bg-[#e7f0ff] rounded-md p-3 cursor-pointer`}
       >
         <div className={`h-8 flex items-center`}>
-          <ImageIcon className={`text-red-500 fill-red-200`}/>
+          <ImageIcon className={`text-blue-500 fill-blue-50`}/>
           <div className={`ml-2 flex-1 truncate min-w-0`}>
             { year }.luv
           </div>

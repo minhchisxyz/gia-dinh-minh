@@ -3,8 +3,11 @@ import fs from 'fs'
 import path from 'path'
 import ffmpeg from 'fluent-ffmpeg'
 import heicConvert from "heic-convert"
+import Logger from "@/lib/logger";
+
 const UPLOADS_DIR = path.join(process.cwd(), 'uploads')
 const BASE_DIR = process.cwd()
+const LOGGER = new Logger('LOCAL FILE HANDLER')
 
 export async function ensureUploadsDir() {
   try {
@@ -24,7 +27,7 @@ export async function streamFile(filePath: string, range: string | null): Promis
 } | null> {
   try {
     if (!fs.existsSync(filePath)) {
-      console.log(`File not found: ${filePath}`)
+      LOGGER.error(`File not found: ${filePath}`)
       return null
     }
 
@@ -49,7 +52,7 @@ export async function streamFile(filePath: string, range: string | null): Promis
           try {
             controller.enqueue(chunk)
           } catch (e) {
-            console.error(`Error sending chunk to client: ${e}`)
+            LOGGER.error(`Error sending chunk to client: ${e}`)
             file.destroy()
           }
         })
@@ -57,14 +60,14 @@ export async function streamFile(filePath: string, range: string | null): Promis
           try {
             controller.close()
           } catch (e) {
-            console.error(`Error closing stream: ${e}`)
+            LOGGER.error(`Error closing stream: ${e}`)
           }
         })
         file.on('error', (err) => {
           try {
             controller.error(err)
           } catch (e) {
-            console.error(`Error sending stream error to client: ${e}`)
+            LOGGER.error(`Error sending stream error to client: ${e}`)
           }
         })
       },
@@ -102,14 +105,14 @@ export async function saveFile(file: File, folderPath: string): Promise<{ url: s
       buffer = Buffer.from(outputBuffer)
       extension = '.jpg'
     } catch (e) {
-      console.error('Failed to convert HEIC to JPEG', e)
+      LOGGER.error(`Failed to convert HEIC to JPEG: ${e}`)
     }
   }
   const now = new Date()
   const filename = `${now.toISOString().replace(/([:\-.TZ])/g, '')}${extension.toLowerCase()}`
-  console.log(filename)
   const relativeFolderPath = folderPath.startsWith('/') ? folderPath.slice(1) : folderPath
   const fullFolderPath = path.join(BASE_DIR, relativeFolderPath)
+
   await fsPromise.mkdir(fullFolderPath, { recursive: true })
   const fullPath = path.join(fullFolderPath, filename)
   await fsPromise.writeFile(fullPath, buffer)
@@ -118,8 +121,6 @@ export async function saveFile(file: File, folderPath: string): Promise<{ url: s
   let posterUrl: string | undefined
   if (file.type.startsWith('video/')) {
     const posterFilename = `${path.basename(filename, extension)}-poster.jpg`
-    console.log(posterFilename)
-
     try {
       await new Promise<void>((resolve, reject) => {
         ffmpeg(fullPath)
@@ -135,7 +136,7 @@ export async function saveFile(file: File, folderPath: string): Promise<{ url: s
       const posterUrlPath = path.join(folderPath, posterFilename).replace(/\\/g, '/')
       posterUrl = posterUrlPath.startsWith('/') ? posterUrlPath : `/${posterUrlPath}`
     } catch (e) {
-      console.error('Failed to generate poster', e)
+      LOGGER.error(`Failed to generate poster ${e}`)
     }
   }
 
@@ -154,7 +155,7 @@ export async function deleteLocalFile(url: string, posterUrl?: string | null) {
         try {
             await fsPromise.unlink(fullPath)
         } catch (e) {
-            console.error(`Failed to delete file ${fullPath}`, e)
+            LOGGER.error(`Failed to delete file ${fullPath}: ${e}`)
         }
     }
     await deletePath(url)
@@ -169,6 +170,6 @@ export async function deleteLocalFolder(folderPath: string) {
     try {
         await fsPromise.rm(fullPath, { recursive: true, force: true })
     } catch (e) {
-        console.error(`Failed to delete folder ${fullPath}`, e)
+        LOGGER.error(`Failed to delete folder ${fullPath}: ${e}`)
     }
 }

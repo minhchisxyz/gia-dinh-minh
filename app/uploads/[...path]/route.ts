@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import path from "path"
 import {streamFile} from "@/lib/localFileHandler";
+import Logger from "@/lib/logger";
+
+const LOGGER = new Logger('UPLOADS ROUTE')
+
 export async function GET(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
     const { path: pathSegments } = await params
     const filePath = path.join(process.cwd(), 'uploads', ...pathSegments)
-    console.log(`Requested file: ${filePath}`)
     try {
         const range = req.headers.get("range")
         if (range) {
@@ -31,9 +34,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ path
                 },
             })
         }
-
     } catch (e) {
-        console.error("Error serving file:", e)
+        LOGGER.error(`Error serving file: ${e}`)
         return new NextResponse("Internal Server Error", { status: 500 })
     }
 }

@@ -21,6 +21,7 @@ import {cn} from "@/lib/utils"
 import {useEffect, useState} from "react"
 import CommentSection from "@/components/comment-section"
 import useLongPress from "@/lib/hooks/use-long-press"
+
 export default function FileCard(
     { file, isSelected, hasSelection, setSelectedFilesAction, currentUserId }: {
       file: File,
@@ -77,13 +78,13 @@ export default function FileCard(
         {...longPressProps}
         className={`w-full h-72 md:w-64 md:h-64 flex flex-col bg-blue-50 hover:bg-[#e7f0ff] rounded-md p-3 cursor-pointer`}
       >
-        <div className={`h-8 flex items-center`}>
+        <div className={`h-8 flex items-center justify-between`}>
           {
-            isVideo ? <Clapperboard className={`text-red-500 fill-red-200`}/> : <ImageIcon className={`text-red-500 fill-red-200`}/>
+            isVideo ? <Clapperboard className={`text-blue-500 fill-blue-50`}/> : <ImageIcon className={`text-blue-500 fill-blue-50`}/>
           }
-          <div className={`ml-2 flex-1 truncate min-w-0`}>
+          {/*<div className={`ml-2 flex-1 truncate min-w-0`}>
             {file.filename}
-          </div>
+          </div>*/}
           {hasSelection && <Checkbox checked={isSelected} onCheckedChange={onCheck}/>}
           <DropdownMenu>
             <DropdownMenuTrigger>
@@ -137,21 +138,47 @@ export default function FileCard(
               <DialogHeader className="hidden">
                 <DialogTitle />
               </DialogHeader>
-              {isVideo ? (
-                  <video
-                      controls
-                      className="max-h-[80vh] max-w-[80vw] rounded-lg shadow-2xl"
-                      autoPlay
-                  >
-                    <source src={file.url} type={file.mimeType} />
-                  </video>
-              ) : (
-                  <img
-                      src={file.url}
-                      alt={file.filename}
-                      className="max-h-[80vh] max-w-[80vw] object-contain rounded-lg shadow-2xl"
-                  />
-              )}
+              <div className={`hidden lg:block`}>
+                <div className={`w-[80vw] h-[80vh] flex flex-row`}>
+                  <div className={`flex-1 flex items-center justify-center bg-black`}>
+                    {isVideo ? (
+                        <video
+                            controls
+                            className="w-full h-full rounded-lg shadow-2xl"
+                            autoPlay
+                        >
+                          <source src={file.url} type={file.mimeType} />
+                        </video>
+                    ) : (
+                        <img
+                            src={file.url}
+                            alt={file.filename}
+                            className="w-full h-full object-contain rounded-lg shadow-2xl"
+                        />
+                    )}
+                  </div>
+                  <div className={`w-75 bg-white`}>
+                    <CommentSection comments={file.comments || []} fileId={file.id} />
+                  </div>
+                </div>
+              </div>
+              <div className={`block lg:hidden`}>
+                {isVideo ? (
+                    <video
+                        controls
+                        className="max-h-[80vh] max-w-[80vw] rounded-lg shadow-2xl"
+                        autoPlay
+                    >
+                      <source src={file.url} type={file.mimeType} />
+                    </video>
+                ) : (
+                    <img
+                        src={file.url}
+                        alt={file.filename}
+                        className="max-h-[80vh] max-w-[80vw] object-contain rounded-lg shadow-2xl"
+                    />
+                )}
+              </div>
             </DialogContent>
           </Dialog>
         </div>

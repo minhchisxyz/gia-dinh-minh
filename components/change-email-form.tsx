@@ -20,7 +20,7 @@ export default function ChangeEmailForm({ currentEmail }: { currentEmail?: strin
   }, [state])
 
   return (
-    <form ref={formRef} action={formAction} className="space-y-4 w-full">
+    <form ref={formRef} action={formAction} className="space-y-4 max-w-md w-full">
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <div className="flex gap-2">

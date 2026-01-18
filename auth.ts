@@ -4,6 +4,9 @@ import Credentials from 'next-auth/providers/credentials';
 import {LogInFormSchema} from "@/lib/definitions";
 import prisma from "@/lib/prisma";
 import bcrypt from 'bcrypt'
+import Logger from "@/lib/logger";
+
+const LOGGER = new Logger('AUTH')
 
 export const { auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -17,6 +20,7 @@ export const { auth, signIn, signOut } = NextAuth({
         })
         if (!user) return null
         if (bcrypt.compareSync(password, user.password)) {
+          LOGGER.info(`User ${username} has logged in`)
           return {
             ...user,
             id: user.id.toString(),
@@ -28,12 +32,8 @@ export const { auth, signIn, signOut } = NextAuth({
   })],
   session: {
     strategy: "jwt",
-    // How long until an idle session expires (in seconds)
-    // 30 days = 30 * 24 * 60 * 60
     maxAge: 30 * 24 * 60 * 60,
-
-    // How frequently to "update" the cookie to extend the session
-    updateAge: 24 * 60 * 60, // 24 hours
+    updateAge: 24 * 60 * 60,
   },
   callbacks: {
     ...authConfig.callbacks,
@@ -56,4 +56,4 @@ export const { auth, signIn, signOut } = NextAuth({
       return session
     }
   }
-});
+})

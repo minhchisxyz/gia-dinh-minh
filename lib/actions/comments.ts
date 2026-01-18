@@ -3,6 +3,9 @@
 import { auth } from "@/auth"
 import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
+import Logger from "@/lib/logger";
+
+const LOGGER = new Logger('COMMENTS')
 
 export async function createComment(content: string, folderId?: number, fileId?: number, path?: string) {
   const session = await auth()
@@ -30,7 +33,7 @@ export async function createComment(content: string, folderId?: number, fileId?:
 
     return { success: true }
   } catch (error) {
-    console.error('Error creating comment:', error)
+    LOGGER.error(`Error creating comment: ${error}`)
     return { success: false, message: 'Có lỗi xảy ra khi bình luận' }
   }
 }
@@ -56,7 +59,7 @@ export async function getComments(folderId?: number, fileId?: number) {
       }
     })
   } catch (error) {
-    console.error('Error fetching comments:', error)
+    LOGGER.error(`Error fetching comments: ${error}`)
     return []
   }
 }

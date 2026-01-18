@@ -6,6 +6,10 @@ import prisma from "@/lib/prisma"
 import bcrypt from "bcrypt"
 import {revalidatePath} from "next/cache"
 import {saveFile, deleteLocalFile} from "@/lib/localFileHandler"
+import Logger from "@/lib/logger";
+
+const LOGGER = new Logger('USER')
+
 export async function changePassword(prevState: ChangePasswordState, formData: FormData): Promise<ChangePasswordState> {
   const validatedFields = ChangePasswordSchema.safeParse(Object.fromEntries(formData.entries()))
 
@@ -139,9 +143,10 @@ export async function updateAvatar(formData: FormData) {
     })
 
     revalidatePath('/account')
+    LOGGER.info(`User ${session.user.username} has updated their avatar.`)
     return { success: true, message: 'Cập nhật ảnh đại diện thành công.' }
   } catch (error) {
-    console.error('Avatar upload error:', error)
+    LOGGER.error(`Error uploading avatar: ${error}`)
     return { success: false, message: 'Có lỗi xảy ra khi tải ảnh lên.' }
   }
 }

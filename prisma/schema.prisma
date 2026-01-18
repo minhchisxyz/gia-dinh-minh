@@ -19,17 +19,18 @@ enum Role {
 }
 
 model User {
-  id        Int       @id @default(autoincrement())
-  role      Role      @default(USER)
-  email     String?   @unique
-  username  String    @unique
-  password  String
-  name      String
-  avatarUrl String?
-  comments  Comment[]
-  files     File[]
-  folders   Folder[]
-  loves     Love[]
+  id            Int            @id @default(autoincrement())
+  role          Role           @default(USER)
+  email         String?        @unique
+  username      String         @unique
+  password      String
+  name          String
+  avatarUrl     String?
+  comments      Comment[]
+  files         File[]
+  folders       Folder[]
+  loves         Love[]
+  subscriptions Subscription[]
 }
 
 model Comment {
@@ -86,4 +87,13 @@ model Folder {
   parentId    Int?
   parent      Folder?   @relation("Subfolders", fields: [parentId], references: [id], onDelete: Cascade)
   loves       Love[]
+}
+
+model Subscription {
+  id        Int    @id @default(autoincrement())
+  endpoint  String @unique
+  p256dhKey String
+  authKey   String
+  userId    Int
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
