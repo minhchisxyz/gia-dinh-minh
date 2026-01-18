@@ -40,7 +40,7 @@ self.addEventListener('notificationclick', function (event) {
   const baseUrl = 'https://giadinhminh.mchisxyz.id.vn'
   const urlToOpen = event.notification.data.url
       ? baseUrl + event.notification.data.url
-      : baseUrl + '/admin'
+      : baseUrl + '/'
 
   event.waitUntil(
       clients.matchAll({
