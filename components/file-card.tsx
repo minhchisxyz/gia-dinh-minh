@@ -85,38 +85,40 @@ export default function FileCard(
           {/*<div className={`ml-2 flex-1 truncate min-w-0`}>
             {file.filename}
           </div>*/}
-          {hasSelection && <Checkbox checked={isSelected} onCheckedChange={onCheck}/>}
-          <DropdownMenu>
-            <DropdownMenuTrigger>
-              <EllipsisVertical className={`hover:bg-blue-200 rounded-full p-1`}/>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className={`w-36`} align={`start`} side={`right`}>
-              <DropdownMenuGroup>
-                <DropdownMenuItem onClick={onCheck}>
-                  Chọn
-                  <DropdownMenuShortcut>
-                    <Check/>
-                  </DropdownMenuShortcut>
-                </DropdownMenuItem>
-                <a href={file.url} download={file.filename}>
-                  <DropdownMenuItem>
-                    Tải xuống
+          <div>
+            {hasSelection && <Checkbox checked={isSelected} onCheckedChange={onCheck}/>}
+            <DropdownMenu>
+              <DropdownMenuTrigger>
+                <EllipsisVertical className={`hover:bg-blue-200 rounded-full p-1`}/>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className={`w-36`} align={`start`} side={`right`}>
+                <DropdownMenuGroup>
+                  <DropdownMenuItem onClick={onCheck}>
+                    Chọn
                     <DropdownMenuShortcut>
-                      <Download/>
+                      <Check/>
                     </DropdownMenuShortcut>
                   </DropdownMenuItem>
-                </a>
-                <DropdownMenuSeparator/>
-                <DropdownMenuItem onClick={async () => await deleteFile(file.id)}>
-                  Xoá
-                  <DropdownMenuShortcut>
-                    <Trash2/>
-                  </DropdownMenuShortcut>
-                </DropdownMenuItem>
+                  <a href={file.url} download={file.filename}>
+                    <DropdownMenuItem>
+                      Tải xuống
+                      <DropdownMenuShortcut>
+                        <Download/>
+                      </DropdownMenuShortcut>
+                    </DropdownMenuItem>
+                  </a>
+                  <DropdownMenuSeparator/>
+                  <DropdownMenuItem onClick={async () => await deleteFile(file.id)}>
+                    Xoá
+                    <DropdownMenuShortcut>
+                      <Trash2/>
+                    </DropdownMenuShortcut>
+                  </DropdownMenuItem>
 
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
         <div className="relative flex-1 w-full overflow-hidden rounded-sm bg-gray-300">
           <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>

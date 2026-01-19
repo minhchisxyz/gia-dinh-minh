@@ -41,28 +41,30 @@ export default function FolderCard(
           <FolderIcon/>
           <span className={`ml-2 flex-1`}>{folder?.name}</span>
         </Link>
-        {hasSelection && <Checkbox checked={isSelected} onCheckedChange={onCheck}/>}
-        <DropdownMenu>
-          <DropdownMenuTrigger>
-            <EllipsisVertical className={`hover:bg-blue-200 rounded-full p-1`}/>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className={`w-36`} align={`start`} side={`right`}>
-            <DropdownMenuGroup>
-              <DropdownMenuItem onClick={onCheck}>
-                Chọn
-                <DropdownMenuShortcut>
-                  <Check/>
-                </DropdownMenuShortcut>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={async () => await deleteFolder(folder?.id || -1)}>
-                Xoá
-                <DropdownMenuShortcut>
-                  <Trash2/>
-                </DropdownMenuShortcut>
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div>
+          {hasSelection && <Checkbox checked={isSelected} onCheckedChange={onCheck}/>}
+          <DropdownMenu>
+            <DropdownMenuTrigger>
+              <EllipsisVertical className={`hover:bg-blue-200 rounded-full p-1`}/>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className={`w-36`} align={`start`} side={`right`}>
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={onCheck}>
+                  Chọn
+                  <DropdownMenuShortcut>
+                    <Check/>
+                  </DropdownMenuShortcut>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={async () => await deleteFolder(folder?.id || -1)}>
+                  Xoá
+                  <DropdownMenuShortcut>
+                    <Trash2/>
+                  </DropdownMenuShortcut>
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
   )
 }

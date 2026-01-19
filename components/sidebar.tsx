@@ -161,7 +161,7 @@ export function SidebarContent({ comments, folderId }: { comments?: Comment[], f
 
 export default function Sidebar({ comments, folderId }: { comments?: Comment[], folderId?: number }) {
   return (
-      <aside className={`hidden md:block w-64 border-r bg-gray-50 overflow-y-auto h-full`}>
+      <aside className={`hidden lg:block w-64 border-r bg-gray-50 overflow-y-auto h-full`}>
         <SidebarContent comments={comments} folderId={folderId}/>
       </aside>
   )
