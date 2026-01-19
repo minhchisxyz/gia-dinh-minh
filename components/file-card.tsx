@@ -192,8 +192,8 @@ export default function FileCard(
           <span className="text-xs text-gray-600 truncate flex-1">{file.author?.name}</span>
           <div className="flex items-center gap-2 text-gray-500">
             <button onClick={handleLove} className="hover:text-red-500 transition-colors flex items-center gap-1">
-              <Heart className={cn("w-5 h-5", isLoved && "fill-red-500 text-red-500")} />
-              <span className="text-xs">{loveCount}</span>
+              <Heart className={cn("w-6 h-6", isLoved && "fill-red-500 text-red-500")} />
+              <span className="text-base">{loveCount}</span>
             </button>
             <button
               onClick={(e) => {
@@ -202,7 +202,7 @@ export default function FileCard(
               }}
               className="hover:text-blue-500 transition-colors flex items-center gap-1"
             >
-              <MessageCircle className="w-5 h-5" />
+              <MessageCircle className="w-6 h-6" />
               <span className="text-xs">{file.comments?.length || 0}</span>
             </button>
             <Dialog open={isCommentOpen} onOpenChange={setIsCommentOpen}>
