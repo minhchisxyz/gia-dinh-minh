@@ -41,7 +41,7 @@ export default function FolderCard(
           <FolderIcon/>
           <span className={`ml-2 flex-1`}>{folder?.name}</span>
         </Link>
-        <div>
+        <div className={`flex items-center gap-2`}>
           {hasSelection && <Checkbox checked={isSelected} onCheckedChange={onCheck}/>}
           <DropdownMenu>
             <DropdownMenuTrigger>

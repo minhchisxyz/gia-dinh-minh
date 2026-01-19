@@ -60,7 +60,7 @@ export default function InstallPrompt() {
   }
 
   return (
-      <div className={`w-64 absolute bottom-2 right-2 z-50 p-4 flex flex-col bg-white rounded-lg border border-gray-200 gap-2`}>
+      <div className={`w-64 absolute bottom-0 right-0 z-50 p-4 flex flex-col bg-white rounded-lg border border-gray-200 gap-2`}>
         <span>
           Tải app để tiện theo dõi hơn
         </span>

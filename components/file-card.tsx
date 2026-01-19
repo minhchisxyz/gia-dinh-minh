@@ -85,7 +85,7 @@ export default function FileCard(
           {/*<div className={`ml-2 flex-1 truncate min-w-0`}>
             {file.filename}
           </div>*/}
-          <div>
+          <div className={`flex items-center gap-2`}>
             {hasSelection && <Checkbox checked={isSelected} onCheckedChange={onCheck}/>}
             <DropdownMenu>
               <DropdownMenuTrigger>
@@ -129,6 +129,7 @@ export default function FileCard(
                   alt={file.filename}
                   className="object-cover cursor-pointer" // This keeps the aspect ratio while filling the box
                   sizes="256px"
+                  loading={`lazy`}
                   onClick={() => setIsPreviewOpen(true)}
                   unoptimized
               />
