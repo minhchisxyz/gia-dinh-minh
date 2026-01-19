@@ -52,17 +52,17 @@ function FileCardSkeleton() {
           <div className="w-6 h-6">
             <UserAvatar url={`/default-avatar.png`} />
           </div>
-          <span className="text-xs text-gray-600 truncate flex-1">luv luv luv</span>
+          <span className="text-sm text-gray-600 truncate flex-1">luv luv luv</span>
           <div className="flex items-center gap-2 text-gray-500">
             <button className="hover:text-red-500 transition-colors flex items-center gap-1">
-              <Heart className={cn("w-5 h-5", "fill-red-500 text-red-500")} />
-              <span className="text-xs">{year}</span>
+              <Heart className={cn("w-6 h-6", "fill-red-500 text-red-500")} />
+              <span className="text-base">{year}</span>
             </button>
             <button
                 className="hover:text-blue-500 transition-colors flex items-center gap-1"
             >
-              <MessageCircle className="w-5 h-5" />
-              <span className="text-xs">{year}</span>
+              <MessageCircle className="w-6 h-6" />
+              <span className="text-base">{year}</span>
             </button>
           </div>
         </div>

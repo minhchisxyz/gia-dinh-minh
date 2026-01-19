@@ -189,7 +189,7 @@ export default function FileCard(
           <div className="w-6 h-6">
             <UserAvatar url={file.author?.avatarUrl} />
           </div>
-          <span className="text-xs text-gray-600 truncate flex-1">{file.author?.name}</span>
+          <span className="text-sm text-gray-600 truncate flex-1">{file.author?.name}</span>
           <div className="flex items-center gap-2 text-gray-500">
             <button onClick={handleLove} className="hover:text-red-500 transition-colors flex items-center gap-1">
               <Heart className={cn("w-6 h-6", isLoved && "fill-red-500 text-red-500")} />
@@ -203,7 +203,7 @@ export default function FileCard(
               className="hover:text-blue-500 transition-colors flex items-center gap-1"
             >
               <MessageCircle className="w-6 h-6" />
-              <span className="text-xs">{file.comments?.length || 0}</span>
+              <span className="text-base">{file.comments?.length || 0}</span>
             </button>
             <Dialog open={isCommentOpen} onOpenChange={setIsCommentOpen}>
               <DialogContent className="sm:max-w-125 h-[80vh] flex flex-col p-0">
