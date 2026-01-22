@@ -13,7 +13,7 @@ import {
 import {Input} from "@/components/ui/input"
 import {createFolder, uploadFile} from "@/lib/actions/files"
 import {usePathname, useRouter} from "next/navigation"
-import {ChangeEvent, startTransition, useActionState, useRef} from "react"
+import {ChangeEvent, useActionState, useRef} from "react"
 import {FieldError, FieldGroup, FieldSet} from "@/components/ui/field"
 import {Spinner} from "@/components/ui/spinner"
 import {Separator} from "@/components/ui/separator"
@@ -22,6 +22,7 @@ import {Progress} from "@/components/ui/progress"
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip"
 import CommentSection from "@/components/comment-section"
 import {Comment} from "@/lib/definitions"
+import pLimit from "p-limit";
 
 export function SidebarContent({ comments, folderId }: { comments?: Comment[], folderId?: number }) {
   const pathname = usePathname()
@@ -46,7 +47,8 @@ export function SidebarContent({ comments, folderId }: { comments?: Comment[], f
 
       try {
         let count = 0
-        for (const file of files) {
+        const limit = pLimit(3)
+        const uploadSingleFile = async (file: File) => {
           toast.loading(`Đang tải ${file.name} lên...`, {
             id: toastId,
             description: <Progress value={Math.round((count / files.length) * 100)} />
@@ -62,9 +64,6 @@ export function SidebarContent({ comments, folderId }: { comments?: Comment[], f
           if (!result.success) {
             throw new Error(result.error || 'Upload failed')
           }
-          startTransition(() => {
-            router.refresh()
-          })
 
           count++
           const percent = Math.round((count / files.length) * 100)
@@ -74,6 +73,9 @@ export function SidebarContent({ comments, folderId }: { comments?: Comment[], f
             description: <Progress value={percent} />
           })
         }
+        const uploadPromises = Array.from(files).map(file => limit(() => uploadSingleFile(file)))
+
+        await Promise.all(uploadPromises)
 
         toast.success('Đã tải tất cả tệp lên thành công!', {
           id: toastId,
@@ -85,6 +87,7 @@ export function SidebarContent({ comments, folderId }: { comments?: Comment[], f
         toast.error('Có lỗi xảy ra khi tải lên', { id: toastId })
       } finally {
         e.target.value = ''
+        router.refresh()
       }
     }
   }

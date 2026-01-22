@@ -124,12 +124,14 @@ export default function FileCard(
           <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
             <DialogTrigger asChild>
               <Image
-                  src={isVideo ? file.posterUrl || '/' : file.url}
+                  src={file.thumbnailUrl || '/'}
                   fill
                   alt={file.filename}
                   className="object-cover cursor-pointer" // This keeps the aspect ratio while filling the box
                   sizes="256px"
                   loading={`lazy`}
+                  placeholder={`blur`}
+                  blurDataURL={file.blurDataUrl}
                   onClick={() => setIsPreviewOpen(true)}
                   unoptimized
               />

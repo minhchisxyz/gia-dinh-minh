@@ -46,20 +46,21 @@ model Comment {
 }
 
 model File {
-  id          Int       @id @default(autoincrement())
-  filename    String
-  extension   String
-  url         String
-  posterUrl   String?
-  mimeType    String
-  size        Int       @default(0)
-  comments    Comment[]
-  authorId    Int
-  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  parent      Folder    @relation(fields: [parentId], references: [id], onDelete: Cascade)
-  parentId    Int
-  loves       Love[]
-  createdTime DateTime  @default(now())
+  id           Int       @id @default(autoincrement())
+  filename     String
+  extension    String
+  url          String
+  thumbnailUrl String?
+  blurDataUrl  String    @default("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/v37fwAJBgP9B9XF7wAAAABJRU5ErkJggg==") @db.Text
+  mimeType     String
+  size         Int       @default(0)
+  comments     Comment[]
+  authorId     Int
+  author       User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent       Folder    @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  parentId     Int
+  loves        Love[]
+  createdTime  DateTime  @default(now())
 }
 
 model Love {

@@ -78,7 +78,8 @@ export type File = {
   filename: string
   extension: string
   url: string
-  posterUrl?: string | null
+  thumbnailUrl?: string | null
+  blurDataUrl: string
   mimeType: string
   size: number
   authorId: number

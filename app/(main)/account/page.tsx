@@ -8,13 +8,15 @@ import {logOut} from "@/lib/actions/auth";
 import {Button} from "@/components/ui/button";
 import {LogOut} from "lucide-react";
 import {
-  Dialog, DialogClose,
+  Dialog,
+  DialogClose,
   DialogContent,
-  DialogDescription, DialogFooter,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger
 } from "@/components/ui/dialog";
+import {runScript} from "@/lib/actions/admin";
 
 export default async function AccountPage() {
   const session = await auth()
@@ -47,7 +49,7 @@ export default async function AccountPage() {
 
           <Separator />
 
-          <div className={'flex justify-center items-center w-full'}>
+          <div className={'flex justify-center items-center w-full gap-5'}>
             <Dialog>
               <form action={logOut}>
                 <DialogTrigger asChild>
@@ -75,6 +77,13 @@ export default async function AccountPage() {
                 </DialogContent>
               </form>
             </Dialog>
+            {user.role === 'ADMIN' && (
+                <form action={runScript}>
+                  <Button type={`submit`}>
+                    Run script
+                  </Button>
+                </form>
+            )}
           </div>
         </div>
       </div>

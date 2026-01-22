@@ -4,10 +4,15 @@ import path from 'path'
 import ffmpeg from 'fluent-ffmpeg'
 import heicConvert from "heic-convert"
 import Logger from "@/lib/logger";
+import {PassThrough} from "stream";
+import sharp from "sharp";
 
 const UPLOADS_DIR = path.join(process.cwd(), 'uploads')
 const BASE_DIR = process.cwd()
 const LOGGER = new Logger('LOCAL FILE HANDLER')
+const BLUR_SIZE = 10
+const THUMBNAIL_QUALITY = 75
+const THUMBNAIL_SIZE = 600
 
 export async function ensureUploadsDir() {
   try {
@@ -37,9 +42,8 @@ export async function streamFile(filePath: string, range: string | null): Promis
     let contentType = 'application/octet-stream'
     if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg'
     else if (ext === '.png') contentType = 'image/png'
-    else if (ext === '.gif') contentType = 'image/gif'
+    else if (ext === '.webp') contentType = 'image/webp'
     else if (ext === '.mp4') contentType = 'video/mp4'
-    else if (ext === '.pdf') contentType = 'application/pdf'
     const parts = range ? range.replace(/bytes=/, "").split("-") : []
     const start = range ? parseInt(parts[0], 10) : 0
     const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1
@@ -82,13 +86,75 @@ export async function streamFile(filePath: string, range: string | null): Promis
   }
 }
 
+
 export async function createLocalFolder(folderPath: string) {
   const relativePath = folderPath.startsWith('/') ? folderPath.slice(1) : folderPath
   const fullPath = path.join(BASE_DIR, relativePath)
   await fsPromise.mkdir(fullPath, { recursive: true })
 }
 
-export async function saveFile(file: File, folderPath: string): Promise<{ url: string, posterUrl?: string, filename: string, size: number }> {
+
+export async function generateVideoThumbnail(videoPath: string, folderPath: string, thumbnailFilename: string): Promise<{blurDataUrl: string}> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = []
+    const stream = new PassThrough()
+
+    stream.on('data', (chunk) => chunks.push(chunk))
+    stream.on('error', (err) => reject(err))
+    stream.on('end', async () => {
+      try {
+        await fsPromise.mkdir(folderPath, { recursive: true })
+
+        const fullBuffer = Buffer.concat(chunks)
+
+        const [thumbnailBuffer, blurDataUrl] = await Promise.all([
+          sharp(fullBuffer)
+              .resize(THUMBNAIL_SIZE)
+              .webp({quality: THUMBNAIL_QUALITY})
+              .toBuffer(),
+          sharp(fullBuffer)
+              .resize(BLUR_SIZE)
+              .toBuffer()
+              .then(b => `data:image/webp;base64,${b.toString('base64')}`)
+        ])
+
+        await fsPromise.writeFile(path.join(folderPath, thumbnailFilename), thumbnailBuffer)
+
+        resolve({blurDataUrl})
+      } catch (e) {
+        reject(e)
+      }
+    })
+    ffmpeg(videoPath)
+        .inputOptions('-ss 00:00:01')
+        .outputOptions('-vframes 1')
+        .outputFormat('image2')
+        .pipe(stream)
+  })
+}
+
+
+export async function generateImageThumbnail(imageBuffer: Buffer, folderPath: string, thumbnailFilename: string): Promise<{blurDataUrl: string}> {
+  await fsPromise.mkdir(folderPath, { recursive: true })
+
+  const thumbnailPath = path.join(folderPath, thumbnailFilename)
+
+  const [blurDataUrl] = await Promise.all([
+      sharp(imageBuffer, { failOn: 'none'})
+          .resize(BLUR_SIZE)
+          .toBuffer()
+          .then(b => `data:image/webp;base64,${b.toString('base64')}`),
+      sharp(imageBuffer, { failOn: 'none'})
+          .resize(THUMBNAIL_SIZE, THUMBNAIL_SIZE, { fit: 'inside', withoutEnlargement: true })
+          .webp({quality: THUMBNAIL_QUALITY})
+          .toFile(thumbnailPath)
+  ])
+
+  return {blurDataUrl}
+}
+
+
+export async function saveFile(file: File, folderPath: string): Promise<{ url: string, thumbnailUrl: string, blurDataUrl: string, filename: string, size: number }> {
   let buffer = Buffer.from(await file.arrayBuffer())
   let extension = path.extname(file.name)
   if (!extension) {
@@ -116,39 +182,31 @@ export async function saveFile(file: File, folderPath: string): Promise<{ url: s
   await fsPromise.mkdir(fullFolderPath, { recursive: true })
   const fullPath = path.join(fullFolderPath, filename)
   await fsPromise.writeFile(fullPath, buffer)
+
   const urlPath = path.join(folderPath, filename).replace(/\\/g, '/')
   const url = urlPath.startsWith('/') ? urlPath : `/${urlPath}`
-  let posterUrl: string | undefined
-  if (file.type.startsWith('video/')) {
-    const posterFilename = `${path.basename(filename, extension)}-poster.jpg`
-    try {
-      await new Promise<void>((resolve, reject) => {
-        ffmpeg(fullPath)
-          .screenshots({
-            count: 1,
-            folder: fullFolderPath,
-            filename: posterFilename,
-            // size: '100%'
-          })
-          .on('end', () => resolve())
-          .on('error', (err: Error) => reject(err))
-      })
-      const posterUrlPath = path.join(folderPath, posterFilename).replace(/\\/g, '/')
-      posterUrl = posterUrlPath.startsWith('/') ? posterUrlPath : `/${posterUrlPath}`
-    } catch (e) {
-      LOGGER.error(`Failed to generate poster ${e}`)
-    }
-  }
+  const thumbnailFilename = `${path.basename(filename, extension)}.webp`
+  const thumbnailFolderPath = path.join(fullFolderPath, 'thumbnails')
+  try {
+    const {blurDataUrl} = file.type.startsWith('video/') ?
+        await generateVideoThumbnail(fullPath, thumbnailFolderPath, thumbnailFilename) :
+        await generateImageThumbnail(buffer, thumbnailFolderPath, thumbnailFilename)
+    const thumbnailUrlPath = path.join(folderPath, 'thumbnails', thumbnailFilename).replace(/\\/g, '/')
+    const thumbnailUrl = thumbnailUrlPath.startsWith('/') ? thumbnailUrlPath : `/${thumbnailUrlPath}`
 
-  return {
-    url,
-    posterUrl,
-    filename,
-    size: buffer.length
+    return {
+      url,
+      thumbnailUrl,
+      blurDataUrl,
+      filename,
+      size: buffer.length
+    }
+  } catch (e) {
+    throw e
   }
 }
 
-export async function deleteLocalFile(url: string, posterUrl?: string | null) {
+export async function deleteLocalFile(url: string, thumbnailUrl?: string | null | undefined) {
     const deletePath = async (p: string) => {
         const relativePath = p.startsWith('/') ? p.slice(1) : p
         const fullPath = path.join(BASE_DIR, relativePath)
@@ -159,8 +217,8 @@ export async function deleteLocalFile(url: string, posterUrl?: string | null) {
         }
     }
     await deletePath(url)
-    if (posterUrl) {
-        await deletePath(posterUrl)
+    if (thumbnailUrl) {
+        await deletePath(thumbnailUrl)
     }
 }
 

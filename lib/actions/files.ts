@@ -160,10 +160,10 @@ export async function uploadFile(formData: FormData) {
     if (!parentPath) {
       parentPath = '/uploads'
     }
-    const { url, posterUrl, filename, size } = await saveFile(file, parentPath)
+    const { url, thumbnailUrl, blurDataUrl, filename, size } = await saveFile(file, parentPath)
     let mimeType = file.type
-    const ext = filename.split('.').pop()?.toLowerCase() || ''
-    if (ext === 'jpg' || ext === 'jpeg') {
+    const extension = filename.split('.').pop()?.toLowerCase() || ''
+    if (extension === 'jpg' || extension === 'jpeg') {
         if (mimeType === 'image/heic' || mimeType === 'image/heif' || file.name.toLowerCase().endsWith('.heic')) {
             mimeType = 'image/jpeg'
         }
@@ -171,12 +171,13 @@ export async function uploadFile(formData: FormData) {
 
     await prisma.file.create({
         data: {
-          filename: filename,
-          extension: ext,
-          mimeType: mimeType,
-          url: url,
-          posterUrl: posterUrl,
-          size: size,
+          filename,
+          extension,
+          mimeType,
+          url,
+          thumbnailUrl,
+          blurDataUrl,
+          size,
           authorId: parseInt(session.user.id),
           parentId: dbParentId!
         }
@@ -204,7 +205,7 @@ export async function deleteFile(id: number) {
   }
   const parentId = file.parentId
 
-  await deleteLocalFile(file.url, file.posterUrl)
+  await deleteLocalFile(file.url, file.thumbnailUrl)
   await prisma.file.delete({where: {id}})
 
   LOGGER.info(`File ${id} has been deleted by user ${session.user.username}`)

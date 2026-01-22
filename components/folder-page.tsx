@@ -154,7 +154,7 @@ export default function FolderPage(
               {isMobile && (
                   <Drawer>
                     <DrawerTrigger asChild>
-                      <Button variant="outline" size="icon" className="md:hidden shrink-0 mr-2">
+                      <Button variant="outline" size="icon" className="lg:hidden shrink-0 mr-2">
                         <Menu className="h-4 w-4" />
                       </Button>
                     </DrawerTrigger>

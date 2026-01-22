@@ -1,8 +1,10 @@
+
 import type { Metadata } from "next"
 import "./globals.css"
 import {Be_Vietnam_Pro} from "next/font/google"
 import {ReactNode} from "react"
 import {Toaster} from "@/components/ui/sonner"
+import {SerwistProvider} from "./serwist";
 
 const vietnam = Be_Vietnam_Pro({
   subsets: ['vietnamese'],
@@ -24,8 +26,10 @@ export default function RootLayout({
       <body
         className={`${vietnam.className} antialiased`}
       >
+      <SerwistProvider swUrl={'/serwist/sw.js'}>
         {children}
-      <Toaster />
+        <Toaster />
+      </SerwistProvider>
       </body>
     </html>
   )
