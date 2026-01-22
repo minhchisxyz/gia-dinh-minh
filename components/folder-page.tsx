@@ -14,7 +14,17 @@ import {Fragment, useEffect, useState} from "react"
 import Link from "next/link"
 import {usePathname} from "next/navigation"
 import FileCard from "@/components/file-card"
-import {CheckSquare, Download, EllipsisVertical, Heart, Menu, Trash2, X} from "lucide-react"
+import {
+  CheckSquare,
+  CircleChevronLeft,
+  CircleChevronRight,
+  Download,
+  EllipsisVertical,
+  Heart,
+  Menu,
+  Trash2,
+  X
+} from "lucide-react"
 import {Button} from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -29,6 +39,9 @@ import {useIsMobile} from "@/lib/hooks/use-mobile"
 import {Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger} from "@/components/ui/drawer"
 import {toggleLove} from "@/lib/actions/interactions"
 import {cn} from "@/lib/utils"
+import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from "@/components/ui/dialog";
+import MediaDisplay from "@/components/media-display";
+import CommentSection from "@/components/comment-section";
 
 export default function FolderPage(
     { folder, folderPath, currentUserId }: {
@@ -40,6 +53,7 @@ export default function FolderPage(
   const pathname = usePathname()
   const [selectedFiles, setSelectedFiles] = useState<number[]>([])
   const [selectedFolders, setSelectedFolders] = useState<number[]>([])
+  const [currentlyOpen, setCurrentlyOpen] = useState<number | undefined>(undefined)
   const isActive = (href: string) => pathname === href
   const hasSelection = selectedFiles.length > 0 || selectedFolders.length > 0
   const isMobile = useIsMobile()
@@ -55,6 +69,11 @@ export default function FolderPage(
   const clearSelection = () => {
     setSelectedFiles([])
     setSelectedFolders([])
+  }
+
+  const open = (index: number | undefined) => {
+    const length = folder?.files?.length || 0
+    setCurrentlyOpen(typeof index === 'number' ? (index + length) % length : undefined)
   }
 
   const selectAll = () => {
@@ -251,6 +270,8 @@ export default function FolderPage(
                     <FileCard
                         key={index}
                         file={file}
+                        index={index}
+                        openAction={open}
                         isSelected={selectedFiles.includes(file.id)}
                         hasSelection={hasSelection}
                         setSelectedFilesAction={setSelectedFiles}
@@ -258,6 +279,53 @@ export default function FolderPage(
                     />
                 ))
               }
+              <Dialog open={typeof currentlyOpen === 'number'} onOpenChange={(isOpen) => {
+                if(!isOpen) open(undefined)
+              }}>
+                <DialogContent
+                    showCloseButton={false}
+                    onInteractOutside={() => {
+                      open(undefined)
+                    }}
+                    className="w-auto h-auto max-w-none max-h-none p-0 border-none shadow-none bg-transparent flex items-center justify-center outline-none"
+                >
+                  <DialogHeader className="hidden">
+                    <DialogTitle />
+                    <DialogDescription/>
+                  </DialogHeader>
+                  {
+                    typeof currentlyOpen === 'number' && (
+                          <>
+                            <div className={`hidden lg:block`}>
+                              <div className={`w-[90vw] h-[80vh] flex flex-row`}>
+                                <div className={`flex-1 flex flex-row bg-black`}>
+                                  <div className={`flex items-center justify-center p-2`}>
+                                    <CircleChevronLeft className={`h-12 w-12 text-white cursor-pointer hover:scale-110 transition-transform`} onClick={(e) => {
+                                      open(typeof currentlyOpen === 'number' ? currentlyOpen - 1 : undefined)
+                                    }}/>
+                                  </div>
+
+                                  <MediaDisplay file={folder.files[currentlyOpen]}/>
+
+                                  <div className={`flex items-center justify-center p-2`}>
+                                    <CircleChevronRight className={`h-12 w-12 text-white cursor-pointer hover:scale-110 transition-transform`} onClick={() => {
+                                      open(typeof currentlyOpen === 'number' ? currentlyOpen + 1: undefined)
+                                    }}/>
+                                  </div>
+                                </div>
+                                <div className={`w-75 bg-white`}>
+                                  <CommentSection comments={folder.files[currentlyOpen].comments || []} fileId={folder.files[currentlyOpen].id} />
+                                </div>
+                              </div>
+                            </div>
+                            <div className={`block lg:hidden`}>
+                              <MediaDisplay file={folder.files[currentlyOpen]}/>
+                            </div>
+                          </>
+                      )
+                  }
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </div>

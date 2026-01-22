@@ -119,8 +119,8 @@ export type Folder = {
   createdTime: Date
   parentId: number | null
   parent?: Folder
-  subfolders?: Folder[]
-  files?: File[]
+  subfolders: Folder[]
+  files: File[]
   loves: Love[]
   comments: Comment[]
 }

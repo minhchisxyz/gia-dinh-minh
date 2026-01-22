@@ -2,7 +2,17 @@
 
 import {File} from "@/lib/definitions"
 import Image from "next/image"
-import {Check, Clapperboard, Download, EllipsisVertical, Heart, Image as ImageIcon, MessageCircle, Trash2} from "lucide-react"
+import {
+  Check,
+  Clapperboard,
+  Download,
+  EllipsisVertical,
+  Heart,
+  Image as ImageIcon,
+  MessageCircle,
+  Play,
+  Trash2
+} from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +20,12 @@ import {
   DropdownMenuItem, DropdownMenuSeparator, DropdownMenuShortcut,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
-import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger} from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {deleteFile} from "@/lib/actions/files"
 import {Dispatch, SetStateAction} from "react"
 import {Checkbox} from "@/components/ui/checkbox"
@@ -23,9 +38,11 @@ import CommentSection from "@/components/comment-section"
 import useLongPress from "@/lib/hooks/use-long-press"
 
 export default function FileCard(
-    { file, isSelected, hasSelection, setSelectedFilesAction, currentUserId }: {
+    { file, isSelected, index, openAction, hasSelection, setSelectedFilesAction, currentUserId }: {
       file: File,
       isSelected: boolean,
+      index: number,
+      openAction: (index: number | undefined) => void,
       hasSelection: boolean,
       setSelectedFilesAction: Dispatch<SetStateAction<number[]>>,
       currentUserId?: number
@@ -45,7 +62,6 @@ export default function FileCard(
   }, [file.loves, currentUserId])
 
   const [isCommentOpen, setIsCommentOpen] = useState(false)
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
 
   const onCheck = () => {
     if (isSelected) setSelectedFilesAction((prev) => prev.filter(id => id !== file.id))
@@ -121,71 +137,30 @@ export default function FileCard(
           </div>
         </div>
         <div className="relative flex-1 w-full overflow-hidden rounded-sm bg-gray-300">
-          <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-            <DialogTrigger asChild>
-              <Image
-                  src={file.thumbnailUrl || '/'}
-                  fill
-                  alt={file.filename}
-                  className="object-cover cursor-pointer" // This keeps the aspect ratio while filling the box
-                  sizes="256px"
-                  loading={`lazy`}
-                  placeholder={`blur`}
-                  blurDataURL={file.blurDataUrl}
-                  onClick={() => setIsPreviewOpen(true)}
-                  unoptimized
-              />
-            </DialogTrigger>
-            <DialogContent
-              showCloseButton={false}
-              className="w-auto h-auto max-w-none max-h-none p-0 border-none shadow-none bg-transparent flex items-center justify-center outline-none"
-            >
-              <DialogHeader className="hidden">
-                <DialogTitle />
-              </DialogHeader>
-              <div className={`hidden lg:block`}>
-                <div className={`w-[80vw] h-[80vh] flex flex-row`}>
-                  <div className={`flex-1 flex items-center justify-center bg-black`}>
-                    {isVideo ? (
-                        <video
-                            controls
-                            className="w-full h-full rounded-lg shadow-2xl"
-                            autoPlay
-                        >
-                          <source src={file.url} type={file.mimeType} />
-                        </video>
-                    ) : (
-                        <img
-                            src={file.url}
-                            alt={file.filename}
-                            className="w-full h-full object-contain rounded-lg shadow-2xl"
-                        />
-                    )}
+          <Image
+              src={file.thumbnailUrl || '/'}
+              fill
+              alt={file.filename}
+              className="object-cover cursor-pointer" // This keeps the aspect ratio while filling the box
+              sizes="256px"
+              loading={`lazy`}
+              placeholder={`blur`}
+              blurDataURL={file.blurDataUrl}
+              onClick={() => openAction(index)}
+              unoptimized
+          />
+          {
+              isVideo && (
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                    flex items-center justify-center
+                    w-16 h-16 rounded-full
+                    bg-white/20 backdrop-blur-md border border-white/30
+                    shadow-xl transition-all duration-300
+                    group-hover:scale-110 group-hover:bg-white/30 pointer-events-none">
+                    <Play className="w-8 h-8  fill-white ml-1" />
                   </div>
-                  <div className={`w-75 bg-white`}>
-                    <CommentSection comments={file.comments || []} fileId={file.id} />
-                  </div>
-                </div>
-              </div>
-              <div className={`block lg:hidden`}>
-                {isVideo ? (
-                    <video
-                        controls
-                        className="max-h-[80vh] max-w-[80vw] rounded-lg shadow-2xl"
-                        autoPlay
-                    >
-                      <source src={file.url} type={file.mimeType} />
-                    </video>
-                ) : (
-                    <img
-                        src={file.url}
-                        alt={file.filename}
-                        className="max-h-[80vh] max-w-[80vw] object-contain rounded-lg shadow-2xl"
-                    />
-                )}
-              </div>
-            </DialogContent>
-          </Dialog>
+              )
+          }
         </div>
         <div className="flex items-center gap-2 mt-2">
           <div className="w-6 h-6">
