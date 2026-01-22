@@ -11,7 +11,7 @@ import Logger from "@/lib/logger";
 const LOGGER = new Logger('USER')
 
 export async function changePassword(prevState: ChangePasswordState, formData: FormData): Promise<ChangePasswordState> {
-  const validatedFields = ChangePasswordSchema.safeParse(Object.fromEntries(formData.entries()))
+  const validatedFields = ChangePasswordSchema.safeParse(formData)
 
   if (!validatedFields.success) {
     return {
@@ -64,7 +64,7 @@ export async function changePassword(prevState: ChangePasswordState, formData: F
 }
 
 export async function changeEmail(prevState: ChangeEmailState, formData: FormData): Promise<ChangeEmailState> {
-  const validatedFields = ChangeEmailSchema.safeParse(Object.fromEntries(formData.entries()))
+  const validatedFields = ChangeEmailSchema.safeParse(formData)
 
   if (!validatedFields.success) {
     return {

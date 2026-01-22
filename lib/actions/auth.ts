@@ -10,7 +10,7 @@ export async function authenticate(
     formData: FormData
 ): Promise<FormState> {
   try {
-    const validatedFields = LogInFormSchema.safeParse(Object.fromEntries(formData))
+    const validatedFields = LogInFormSchema.safeParse(formData)
 
     if (!validatedFields.success) {
       const errors = z.treeifyError(validatedFields.error)
@@ -23,7 +23,7 @@ export async function authenticate(
       }
     }
     await signIn('credentials', {
-      ...Object.fromEntries(formData),
+      ...formData,
       redirectTo: '/'
     })
   } catch (error) {
